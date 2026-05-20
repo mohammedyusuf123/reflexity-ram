@@ -96,7 +96,7 @@ productSchema.index({ price: 1 });
 productSchema.index({ isActive: 1 });
 
 // Auto-update stockLabel based on stock field
-productSchema.pre('save', function (next) {
+productSchema.pre('save', function () {
   if (this.isModified('stock') || this.isModified('stockQuantity')) {
     if (this.stockQuantity === 0) {
       this.stock = 'out';
@@ -109,7 +109,6 @@ productSchema.pre('save', function (next) {
       this.stockLabel = 'In stock';
     }
   }
-  next();
 });
 
 module.exports = mongoose.model('Product', productSchema);

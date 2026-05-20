@@ -82,13 +82,12 @@ orderSchema.index({ status: 1 });
 orderSchema.index({ stripePaymentIntentId: 1 });
 
 // Generate order number before saving
-orderSchema.pre('save', function (next) {
+orderSchema.pre('save', function () {
   if (!this.orderNumber) {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substr(2, 4).toUpperCase();
     this.orderNumber = `RFX-${timestamp}-${random}`;
   }
-  next();
 });
 
 module.exports = mongoose.model('Order', orderSchema);

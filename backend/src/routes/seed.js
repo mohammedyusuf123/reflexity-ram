@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
     const adminPassword = process.env.ADMIN_PASSWORD || 'ReflexityAdmin2026!';
     let admin = await User.findOne({ email: adminEmail });
     if (!admin) {
-      admin = await User.create({
+      admin = new User({
         firstName: 'Admin',
         lastName: 'User',
         email: adminEmail,
@@ -28,10 +28,13 @@ router.post('/', async (req, res) => {
         role: 'admin',
         isEmailVerified: true,
       });
-    } else {
-      admin.role = 'admin';
-      admin.isEmailVerified = true;
       await admin.save();
+    } else {
+      // Update role without triggering password re-hash
+      await User.updateOne(
+        { email: adminEmail },
+        { $set: { role: 'admin', isEmailVerified: true } }
+      );
     }
 
     // ── Products ─────────────────────────────────────────────────────────────

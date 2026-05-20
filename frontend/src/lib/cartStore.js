@@ -8,9 +8,9 @@ const useCartStore = create((set, get) => ({
   discount: 0,
   couponCode: null,
   isLoading: false,
-  isOpen: false, // cart drawer open state
+  isOpen: false,
 
-  // Fetch cart from server
+  // Fetch cart from server — only overwrites store if fetch succeeds
   fetchCart: async () => {
     set({ isLoading: true });
     try {
@@ -24,8 +24,9 @@ const useCartStore = create((set, get) => ({
         isLoading: false,
       });
     } catch (err) {
+      // Don't wipe items on network error — keep whatever is in memory
       set({ isLoading: false });
-      console.error('Failed to fetch cart:', err);
+      console.error('Failed to fetch cart:', err?.response?.data || err?.message || err);
     }
   },
 
@@ -44,6 +45,7 @@ const useCartStore = create((set, get) => ({
     } catch (err) {
       set({ isLoading: false });
       const message = err.response?.data?.error || 'Failed to add to cart';
+      console.error('addItem error:', err?.response?.data || err?.message);
       return { success: false, message };
     }
   },
@@ -61,7 +63,7 @@ const useCartStore = create((set, get) => ({
       });
     } catch (err) {
       set({ isLoading: false });
-      console.error('Failed to update cart:', err);
+      console.error('updateItem error:', err?.response?.data || err?.message);
     }
   },
 
@@ -78,26 +80,26 @@ const useCartStore = create((set, get) => ({
       });
     } catch (err) {
       set({ isLoading: false });
-      console.error('Failed to remove from cart:', err);
+      console.error('removeItem error:', err?.response?.data || err?.message);
     }
   },
 
-  // Clear cart
+  // Clear cart on server + locally
   clearCart: async () => {
     try {
       await cartApi.clear();
       set({ items: [], subtotal: 0, itemCount: 0, discount: 0, couponCode: null });
     } catch (err) {
-      console.error('Failed to clear cart:', err);
+      console.error('clearCart error:', err?.response?.data || err?.message);
     }
   },
 
-  // Clear cart locally (after order placed)
+  // Clear cart locally only (after order placed)
   clearCartLocal: () => {
     set({ items: [], subtotal: 0, itemCount: 0, discount: 0, couponCode: null });
   },
 
-  // Toggle cart drawer
+  // Cart drawer
   openCart: () => set({ isOpen: true }),
   closeCart: () => set({ isOpen: false }),
   toggleCart: () => set((s) => ({ isOpen: !s.isOpen })),

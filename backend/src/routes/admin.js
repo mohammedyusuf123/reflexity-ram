@@ -94,6 +94,23 @@ router.get(
   }
 );
 
+
+// GET /api/admin/products/:id
+router.get(
+  '/products/:id',
+  [param('id').custom((v) => isValidObjectId(v)).withMessage('Invalid product ID')],
+  validate,
+  async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id).lean();
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+      res.json({ product });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to fetch product' });
+    }
+  }
+);
+
 // POST /api/admin/products
 router.post(
   '/products',

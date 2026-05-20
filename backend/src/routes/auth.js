@@ -288,8 +288,8 @@ router.post(
           token: resetToken,
         });
       } catch (emailErr) {
-        // Log email failure but don't expose it to the user
-        console.error('Password reset email failed:', emailErr.message);
+        // Log full error so you can see what's wrong in server logs
+        console.error('Password reset email failed:', emailErr.message, emailErr);
       }
 
       res.json({ message: 'If an account exists, a reset email has been sent.' });
@@ -395,7 +395,8 @@ router.post(
       }
 
       user.password = newPassword;
-      await user.save();
+      // validateBeforeSave:false prevents other required fields from blocking this targeted update
+      await user.save({ validateBeforeSave: false });
 
       res.json({ message: 'Password changed successfully' });
     } catch (err) {

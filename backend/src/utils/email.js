@@ -2,8 +2,10 @@ const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// onboarding@resend.dev works without domain verification (Resend's default test sender).
-// Set FROM_EMAIL env var to a verified domain address for production.
+// IMPORTANT: onboarding@resend.dev is Resend's sandbox sender.
+// It can ONLY send to the email address that owns the Resend account.
+// For production you MUST set FROM_EMAIL to a verified domain sender,
+// e.g. FROM_EMAIL=noreply@yourdomain.com  (domain verified in Resend dashboard)
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Reflexity RAM <onboarding@resend.dev>';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
@@ -39,7 +41,7 @@ const sendVerificationEmail = async ({ email, firstName, token }) => {
     `,
   });
 
-  if (error) throw new Error(`Email send failed: ${error.message}`);
+  if (error) { console.error('Resend error detail:', JSON.stringify(error)); throw new Error(`Email send failed: ${error.message || JSON.stringify(error)}`); }
   return data;
 };
 
@@ -74,7 +76,7 @@ const sendPasswordResetEmail = async ({ email, firstName, token }) => {
     `,
   });
 
-  if (error) throw new Error(`Email send failed: ${error.message}`);
+  if (error) { console.error('Resend error detail:', JSON.stringify(error)); throw new Error(`Email send failed: ${error.message || JSON.stringify(error)}`); }
   return data;
 };
 
@@ -150,7 +152,7 @@ const sendOrderConfirmationEmail = async ({ email, firstName, order }) => {
     `,
   });
 
-  if (error) throw new Error(`Email send failed: ${error.message}`);
+  if (error) { console.error('Resend error detail:', JSON.stringify(error)); throw new Error(`Email send failed: ${error.message || JSON.stringify(error)}`); }
   return data;
 };
 
@@ -183,7 +185,7 @@ const sendShippingNotificationEmail = async ({ email, firstName, order }) => {
     `,
   });
 
-  if (error) throw new Error(`Email send failed: ${error.message}`);
+  if (error) { console.error('Resend error detail:', JSON.stringify(error)); throw new Error(`Email send failed: ${error.message || JSON.stringify(error)}`); }
   return data;
 };
 

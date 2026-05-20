@@ -99,6 +99,7 @@ export const adminApi = {
 
   // Products
   listProducts: (params) => api.get('/admin/products', { params }),
+  getProduct: (id) => api.get(`/admin/products/${id}`),
   createProduct: (data) => api.post('/admin/products', data),
   updateProduct: (id, data) => api.patch(`/admin/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),

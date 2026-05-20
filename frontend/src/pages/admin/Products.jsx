@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus, Pencil, Trash2, Upload, X, Check, Loader2,
   Search, ChevronLeft, ChevronRight, ImageIcon, AlertTriangle
@@ -264,6 +264,11 @@ function ProductModal({ product, onClose, onSave }) {
           </div>
 
           <div>
+            <label className="admin-label">Description</label>
+            <textarea className="input min-h-[80px]" value={form.description || ''} onChange={e => setField('description', e.target.value)} placeholder="Product description shown on the listing page..." />
+          </div>
+
+          <div>
             <label className="admin-label">Compatibility (one per line)</label>
             <textarea className="input min-h-[60px]" value={Array.isArray(form.compatibility) ? form.compatibility.join('\n') : form.compatibility} onChange={e => setField('compatibility', e.target.value)} />
           </div>
@@ -305,6 +310,7 @@ export default function AdminProducts() {
   const [modalProduct, setModalProduct] = useState(null); // null = closed, {} = new, {...} = edit
   const [modalOpen, setModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const navigate = useNavigate();
 
   const load = (p = page, q = search) => {
     setLoading(true);
@@ -450,9 +456,9 @@ export default function AdminProducts() {
                             <ChevronRight size={13} />
                           </Link>
                           <button
-                            onClick={() => { setModalProduct(p); setModalOpen(true); }}
+                            onClick={() => navigate(`/admin/products/edit/${p._id}`)}
                             className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
-                            title="Edit"
+                            title="Edit product"
                           >
                             <Pencil size={13} />
                           </button>

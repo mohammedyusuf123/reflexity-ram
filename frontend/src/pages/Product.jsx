@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Package,
 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -21,7 +22,9 @@ import RestockSignup from "@/components/RestockSignup";
 import EmptyState from "@/components/EmptyState";
 import { PRODUCTS, findProduct } from "@/lib/data";
 import { useCart, useRecentlyViewed } from "@/lib/store";
+import useAuthStore from "@/lib/authStore";
 import { useSEO } from "@/lib/seo";
+import { productsApi } from "@/lib/api";
 
 const TABS = [
   { id: "specs", label: "Specifications" },
@@ -40,6 +43,7 @@ export default function Product() {
   const [modalOpen, setModalOpen] = useState(false);
   const [skuCopied, setSkuCopied] = useState(false);
   const addItem = useCart((s) => s.addItem);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const addViewed = useRecentlyViewed((s) => s.add);
   const recentSlugs = useRecentlyViewed((s) => s.slugs);
 
@@ -107,6 +111,17 @@ export default function Product() {
     }
     navigate("/checkout");
   };
+
+  // For admin: find product ID for edit link
+  const [productId, setProductId] = useState(null);
+  useEffect(() => {
+    // Fetch the product ID from API for admin edit link
+    if (isAdmin()) {
+      productsApi.getBySlug(p?.slug).then(({ data }) => {
+        setProductId(data?.product?._id);
+      }).catch(() => {});
+    }
+  }, [p?.slug]);
 
   const copySku = async () => {
     try {
@@ -179,6 +194,14 @@ export default function Product() {
                 </button>
               </div>
 
+              {isAdmin() && productId && (
+                <Link
+                  to={`/admin/products/edit/${productId}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors text-[12px] font-medium"
+                >
+                  <Pencil size={11} /> Edit this product
+                </Link>
+              )}
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight mb-3">
                 {p.name}
               </h1>

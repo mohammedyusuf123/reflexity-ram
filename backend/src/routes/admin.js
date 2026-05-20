@@ -13,6 +13,14 @@ const router = express.Router();
 // All admin routes require authentication + admin role
 router.use(authenticate, requireAdmin);
 
+// Prevent browser/CDN caching of all admin API responses
+router.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 // ─── Helper: validate MongoDB ObjectId ────────────────────────────────────────
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 

@@ -24,6 +24,14 @@ router.use((req, res, next) => {
 // ─── Helper: validate MongoDB ObjectId ────────────────────────────────────────
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+// Keep stock status derived from stockQuantity even when using atomic updates.
+const deriveStockState = (stockQuantity) => {
+  const quantity = Number(stockQuantity);
+  if (quantity === 0) return { stock: 'out', stockLabel: 'Out of stock' };
+  if (quantity <= 5) return { stock: 'low', stockLabel: 'Low stock' };
+  return { stock: 'in', stockLabel: 'In stock' };
+};
+
 // ─── DASHBOARD STATS ──────────────────────────────────────────────────────────
 router.get('/stats', async (req, res) => {
   try {
@@ -184,11 +192,15 @@ router.patch(
         'profile', 'heatspreader', 'rgb', 'condition', 'warranty', 'price',
         'compareAt', 'stockQuantity', 'estimatedDispatch', 'images', 'tags',
         'compatibility', 'included', 'isFeatured', 'isActive', 'description',
-        'metaTitle', 'metaDescription', 'stockLabel',
+        'metaTitle', 'metaDescription',
       ];
       const updates = {};
       for (const key of allowed) {
         if (req.body[key] !== undefined) updates[key] = req.body[key];
+      }
+
+      if (updates.stockQuantity !== undefined) {
+        Object.assign(updates, deriveStockState(updates.stockQuantity));
       }
 
       if (Object.keys(updates).length === 0) {
@@ -239,9 +251,14 @@ router.patch(
   validate,
   async (req, res) => {
     try {
+      const stockUpdates = {
+        stockQuantity: req.body.stockQuantity,
+        ...deriveStockState(req.body.stockQuantity),
+      };
+
       const product = await Product.findByIdAndUpdate(
         req.params.id,
-        { stockQuantity: req.body.stockQuantity },
+        stockUpdates,
         { new: true, runValidators: true }
       );
       if (!product) return res.status(404).json({ error: 'Product not found' });

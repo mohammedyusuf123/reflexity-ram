@@ -30,13 +30,21 @@ const app = express();
 // ─── Security Middleware ───────────────────────────────────────────────────────
 app.use(helmet());
 
-// CORS: use ALLOWED_ORIGINS env var in production.
-// Falls back to localhost only in non-production environments.
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
-  : process.env.NODE_ENV === 'production'
-    ? [] // No origins allowed if env var is missing in production — fail safe
-    : ['http://localhost:5173', 'http://localhost:3000'];
+// CORS: merge configured origins with the known production frontends.
+// This prevents a single missing environment entry from breaking secondary deploys.
+const defaultAllowedOrigins = [
+  'https://reflexityram.com',
+  'https://www.reflexityram.com',
+  'https://reflexity-ram2.pages.dev',
+  ...(process.env.NODE_ENV === 'production'
+    ? []
+    : ['http://localhost:5173', 'http://localhost:3000']),
+];
+const configuredAllowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredAllowedOrigins])];
 
 app.use(
   cors({

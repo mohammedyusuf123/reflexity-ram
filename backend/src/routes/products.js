@@ -5,6 +5,15 @@ const { validate } = require('../middleware/validate');
 
 const router = express.Router();
 
+const preventStaleProductCache = (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+};
+
+router.use(preventStaleProductCache);
+
 // ─── GET /api/products ─────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {

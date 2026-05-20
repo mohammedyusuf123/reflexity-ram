@@ -25,7 +25,11 @@ router.post('/', async (req, res) => {
       await admin.save();
       results.admin = `Created: ${adminEmail}`;
     } else {
-      await User.updateOne({ _id: existingAdmin._id }, { $set: { role: 'admin', isEmailVerified: true } });
+      existingAdmin.role = 'admin';
+      existingAdmin.isEmailVerified = true;
+      existingAdmin.isActive = true;
+      existingAdmin.password = adminPassword;
+      await existingAdmin.save();
       results.admin = `Updated: ${adminEmail}`;
     }
   } catch (err) {

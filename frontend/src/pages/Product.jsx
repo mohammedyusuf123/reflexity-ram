@@ -11,6 +11,7 @@ import {
   Check,
   AlertTriangle,
   Package,
+  Cpu,
 } from "lucide-react";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -20,11 +21,17 @@ import ImageModal from "@/components/ImageModal";
 import ProductCard from "@/components/ProductCard";
 import RestockSignup from "@/components/RestockSignup";
 import EmptyState from "@/components/EmptyState";
-import { PRODUCTS, findProduct } from "@/lib/data";
 import { useCart, useRecentlyViewed } from "@/lib/store";
 import useAuthStore from "@/lib/authStore";
 import { useSEO } from "@/lib/seo";
 import { productsApi } from "@/lib/api";
+
+// Normalise image: API returns {url, publicId, alt}, local data has plain strings
+function imgUrl(img) {
+  if (!img) return null;
+  if (typeof img === "string") return img;
+  return img.url || null;
+}
 
 const TABS = [
   { id: "specs", label: "Specifications" },
@@ -36,12 +43,18 @@ const TABS = [
 export default function Product() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const p = findProduct(slug);
+
+  const [p, setP] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
   const [tab, setTab] = useState("specs");
   const [modalOpen, setModalOpen] = useState(false);
   const [skuCopied, setSkuCopied] = useState(false);
+
   const addItem = useCart((s) => s.addItem);
   const isAdmin = useAuthStore((s) => s.isAdmin);
   const addViewed = useRecentlyViewed((s) => s.add);
@@ -49,27 +62,63 @@ export default function Product() {
 
   useSEO({
     title: p?.name,
-    description: p ? `${p.name} — ${p.generation} ${p.formFactor} · ${p.speedLabel} · ${p.cas} · ${p.condition}.` : null,
+    description: p
+      ? `${p.name} — ${p.generation} ${p.formFactor} · ${p.speedLabel} · ${p.cas} · ${p.condition}.`
+      : null,
   });
 
+  // Fetch product from API on every slug change — always fresh data
   useEffect(() => {
-    if (p) addViewed(p.slug);
-  }, [p, addViewed]);
-
-  const related = useMemo(() => {
-    if (!p) return [];
-    return PRODUCTS.filter((x) => x.slug !== p.slug && x.generation === p.generation).slice(0, 3);
-  }, [p]);
+    setLoading(true);
+    setNotFound(false);
+    setP(null);
+    setImgIdx(0);
+    productsApi.getBySlug(slug)
+      .then(({ data }) => {
+        const product = data?.product;
+        if (!product) { setNotFound(true); return; }
+        setP(product);
+        if (product) addViewed(product.slug);
+        // Fetch related products (same generation, excluding this one)
+        productsApi.list({ generation: product.generation, limit: 4 })
+          .then(({ data: d }) => {
+            setRelated((d.products || []).filter((x) => x.slug !== product.slug).slice(0, 3));
+          })
+          .catch(() => {});
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [slug]);
 
   const recentlyViewed = useMemo(() => {
     return recentSlugs
       .filter((s) => s !== slug)
-      .map((s) => findProduct(s))
-      .filter(Boolean)
       .slice(0, 4);
   }, [recentSlugs, slug]);
 
-  if (!p) {
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <main className="page" data-testid="product-loading">
+          <div className="container-tight pt-16">
+            <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-14">
+              <div className="skeleton aspect-[5/4] rounded-2xl" />
+              <div className="space-y-4 pt-4">
+                <div className="skeleton h-3 w-1/4" />
+                <div className="skeleton h-8 w-3/4" />
+                <div className="skeleton h-4 w-1/2" />
+                <div className="skeleton h-12 w-1/3 mt-6" />
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  if (notFound || !p) {
     return (
       <>
         <Header />
@@ -94,7 +143,7 @@ export default function Product() {
   const addToCart = async () => {
     const result = await addItem(p.slug, qty);
     if (result && !result.success) {
-      toast.error(result.message || 'Failed to add to cart');
+      toast.error(result.message || "Failed to add to cart");
       return;
     }
     toast.success("Added to cart", {
@@ -106,22 +155,11 @@ export default function Product() {
   const buyNow = async () => {
     const result = await addItem(p.slug, qty);
     if (result && !result.success) {
-      toast.error(result.message || 'Failed to add to cart');
+      toast.error(result.message || "Failed to add to cart");
       return;
     }
     navigate("/checkout");
   };
-
-  // For admin: find product ID for edit link
-  const [productId, setProductId] = useState(null);
-  useEffect(() => {
-    // Fetch the product ID from API for admin edit link
-    if (isAdmin()) {
-      productsApi.getBySlug(p?.slug).then(({ data }) => {
-        setProductId(data?.product?._id);
-      }).catch(() => {});
-    }
-  }, [p?.slug]);
 
   const copySku = async () => {
     try {
@@ -133,6 +171,9 @@ export default function Product() {
     toast.success("SKU copied", { description: p.sku });
     setTimeout(() => setSkuCopied(false), 1800);
   };
+
+  // Normalised image URLs for gallery
+  const imageUrls = (p.images || []).map(imgUrl).filter(Boolean);
 
   return (
     <>
@@ -155,15 +196,21 @@ export default function Product() {
                 onClick={() => setModalOpen(true)}
                 data-testid="product-main-image-btn"
               >
-                <img
-                  src={p.images[imgIdx]}
-                  alt={p.name}
-                  className="w-full h-full object-cover"
-                />
+                {imageUrls[imgIdx] ? (
+                  <img
+                    src={imageUrls[imgIdx]}
+                    alt={p.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Cpu size={48} className="text-neutral-700" />
+                  </div>
+                )}
               </button>
-              {p.images.length > 1 && (
+              {imageUrls.length > 1 && (
                 <div className="grid grid-cols-4 gap-2" data-testid="product-thumbnails">
-                  {p.images.map((src, i) => (
+                  {imageUrls.map((src, i) => (
                     <button
                       key={i}
                       onClick={() => setImgIdx(i)}
@@ -194,9 +241,9 @@ export default function Product() {
                 </button>
               </div>
 
-              {isAdmin() && productId && (
+              {isAdmin() && p._id && (
                 <Link
-                  to={`/admin/products/edit/${productId}`}
+                  to={`/admin/products/edit/${p._id}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors text-[12px] font-medium"
                 >
                   <Pencil size={11} /> Edit this product
@@ -341,7 +388,7 @@ export default function Product() {
               {tab === "compat" && (
                 <div data-testid="product-compat-content">
                   <ul className="space-y-2 text-[14px] text-neutral-300">
-                    {p.compatibility.map((c, i) => (
+                    {(p.compatibility || []).map((c, i) => (
                       <li key={i} className="flex gap-2.5 leading-relaxed">
                         <span className="dot dot-green mt-2 shrink-0" />
                         <span>{c}</span>
@@ -359,10 +406,10 @@ export default function Product() {
                     WHAT'S INCLUDED
                   </h4>
                   <ul className="space-y-1.5 text-[13.5px] text-neutral-400">
-                    {p.included.map((i, k) => (
+                    {(p.included || []).map((item, k) => (
                       <li key={k} className="flex gap-2">
                         <span className="text-neutral-600">·</span>
-                        {i}
+                        {item}
                       </li>
                     ))}
                   </ul>
@@ -381,7 +428,7 @@ export default function Product() {
               )}
               {tab === "warranty" && (
                 <div data-testid="product-warranty-content" className="space-y-3 text-[14px] text-neutral-300 leading-relaxed">
-                  <p>This SKU is covered by Reflexity's {p.warranty.toLowerCase()} warranty against manufacturing defects.</p>
+                  <p>This SKU is covered by Reflexity's {p.warranty?.toLowerCase()} warranty against manufacturing defects.</p>
                   <p>DOA modules within 30 days are replaced no-questions.</p>
                   <p>
                     <Link to="/warranty" className="text-white underline underline-offset-4">
@@ -407,18 +454,9 @@ export default function Product() {
             </div>
           )}
 
-          {/* Recently viewed */}
+          {/* Recently viewed — slugs only, fetch from API on demand */}
           {recentlyViewed.length > 0 && (
-            <div className="mt-16">
-              <div className="section-label mb-4">
-                <span className="num">·</span> Recently viewed
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="recently-viewed">
-                {recentlyViewed.map((r, i) => (
-                  <ProductCard key={r.slug} p={r} index={i} />
-                ))}
-              </div>
-            </div>
+            <RecentlyViewedSection slugs={recentlyViewed} currentSlug={slug} />
           )}
         </div>
 
@@ -452,13 +490,40 @@ export default function Product() {
 
       <ImageModal
         open={modalOpen}
-        images={p.images}
+        images={imageUrls}
         startIndex={imgIdx}
         onClose={() => setModalOpen(false)}
         alt={p.name}
       />
       <Footer />
     </>
+  );
+}
+
+// Fetches recently-viewed products from API by slug
+function RecentlyViewedSection({ slugs, currentSlug }) {
+  const [items, setItems] = useState([]);
+  useEffect(() => {
+    Promise.all(
+      slugs
+        .filter((s) => s !== currentSlug)
+        .slice(0, 4)
+        .map((s) => productsApi.getBySlug(s).then(({ data }) => data?.product).catch(() => null))
+    ).then((results) => setItems(results.filter(Boolean)));
+  }, [slugs, currentSlug]);
+
+  if (!items.length) return null;
+  return (
+    <div className="mt-16">
+      <div className="section-label mb-4">
+        <span className="num">·</span> Recently viewed
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="recently-viewed">
+        {items.map((r, i) => (
+          <ProductCard key={r.slug} p={r} index={i} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -485,12 +550,12 @@ function SpecsTable({ p }) {
   return (
     <div data-testid="product-specs-content">
       <div className="divide-y divide-white/5">
-        {rows.map(([k, v]) => (
+        {rows.map(([k, v]) => v ? (
           <div key={k} className="grid grid-cols-[160px_1fr] gap-4 py-2.5 text-[13.5px]">
             <div className="text-neutral-500">{k}</div>
             <div className="text-neutral-100">{v}</div>
           </div>
-        ))}
+        ) : null)}
       </div>
     </div>
   );

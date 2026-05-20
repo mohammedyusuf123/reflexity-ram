@@ -1,6 +1,13 @@
 import { Link } from "react-router-dom";
 import { Cpu } from "lucide-react";
 
+// Normalise image: API returns {url, publicId, alt}, local data has plain strings
+function imgUrl(img) {
+  if (!img) return null;
+  if (typeof img === "string") return img;
+  return img.url || null;
+}
+
 export default function ProductCard({ p, index = 0 }) {
   return (
     <Link
@@ -10,9 +17,9 @@ export default function ProductCard({ p, index = 0 }) {
       data-testid={`product-card-${p.slug}`}
     >
       <div className="relative aspect-[5/4] bg-gradient-to-b from-white/[0.03] to-transparent overflow-hidden">
-        {p.images?.[0] ? (
+        {imgUrl(p.images?.[0]) ? (
           <img
-            src={p.images[0]}
+            src={imgUrl(p.images[0])}
             alt={p.name}
             className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform"
             loading="lazy"

@@ -5,7 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import EmptyState from "@/components/EmptyState";
-import { PRODUCTS, filterOptions } from "@/lib/data";
+import { filterOptions } from "@/lib/data";
+import { productsApi } from "@/lib/api";
 import { useSEO } from "@/lib/seo";
 
 const SORTS = [
@@ -23,7 +24,9 @@ export default function Shop() {
   });
   const [params, setParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const q = params.get("q") || "";
   const gen = params.getAll("gen");
@@ -33,9 +36,18 @@ export default function Shop() {
   const eccOnly = params.get("ecc") === "true";
   const sort = params.get("sort") || "featured";
 
+  // Always fetch fresh product data from the API on page load
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 350);
-    return () => clearTimeout(t);
+    setLoading(true);
+    setError(null);
+    productsApi.list({ limit: 200 })
+      .then(({ data }) => {
+        setProducts(data.products || []);
+      })
+      .catch(() => {
+        setError("Failed to load products. Please refresh.");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const update = (key, value) => {
@@ -60,7 +72,7 @@ export default function Shop() {
   const clearAll = () => setParams(new URLSearchParams(), { replace: true });
 
   const filtered = useMemo(() => {
-    let out = PRODUCTS.filter((p) => {
+    let out = products.filter((p) => {
       if (gen.length && !gen.includes(p.generation)) return false;
       if (form.length && !form.includes(p.formFactor)) return false;
       if (cap.length && !cap.includes(p.capacity)) return false;
@@ -104,7 +116,7 @@ export default function Shop() {
         break;
     }
     return out;
-  }, [q, gen, form, cap, cond, eccOnly, sort]);
+  }, [products, q, gen, form, cap, cond, eccOnly, sort]);
 
   const activeCount =
     gen.length + form.length + cap.length + cond.length + (eccOnly ? 1 : 0) + (q ? 1 : 0);
@@ -178,8 +190,7 @@ export default function Shop() {
               </div>
               <h1 className="display-2 display-grad mt-3">All memory.</h1>
               <p className="text-[14px] text-neutral-500 mt-2">
-                {filtered.length} {filtered.length === 1 ? "module" : "modules"} ·
-                spec-first browsing
+                {loading ? "Loading…" : `${filtered.length} ${filtered.length === 1 ? "module" : "modules"} · spec-first browsing`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -264,6 +275,15 @@ export default function Shop() {
                     </div>
                   ))}
                 </div>
+              ) : error ? (
+                <EmptyState
+                  icon={Inbox}
+                  title="Could not load products"
+                  description={error}
+                  ctaLabel="Refresh"
+                  ctaTo="/shop"
+                  testId="shop-error-state"
+                />
               ) : filtered.length === 0 ? (
                 <EmptyState
                   icon={Inbox}

@@ -17,235 +17,47 @@ router.post('/', async (req, res) => {
   const results = { admin: null, products: 0, errors: [] };
 
   try {
-    // ── Admin user ──────────────────────────────────────────────────────────
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@reflexityram.com';
     const adminPassword = process.env.ADMIN_PASSWORD || 'ReflexityAdmin2026!';
-
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (!existingAdmin) {
-      const admin = new User({
-        firstName: 'Admin',
-        lastName: 'User',
-        email: adminEmail,
-        password: adminPassword,
-        role: 'admin',
-        isEmailVerified: true,
-      });
+      const admin = new User({ firstName: 'Admin', lastName: 'User', email: adminEmail, password: adminPassword, role: 'admin', isEmailVerified: true });
       await admin.save();
       results.admin = `Created: ${adminEmail}`;
     } else {
-      await User.updateOne(
-        { _id: existingAdmin._id },
-        { $set: { role: 'admin', isEmailVerified: true } }
-      );
+      await User.updateOne({ _id: existingAdmin._id }, { $set: { role: 'admin', isEmailVerified: true } });
       results.admin = `Updated: ${adminEmail}`;
     }
   } catch (err) {
     results.errors.push(`Admin: ${err.message}`);
   }
 
-  // ── Products ─────────────────────────────────────────────────────────────
-  try {
-    const existingCount = await Product.countDocuments();
-    if (existingCount > 0) {
-      results.products = existingCount;
-      results.skippedProducts = true;
-    } else {
-      const products = [
-        {
-          name: 'Reflexity DDR5-6000 16GB Kit (2×8GB)',
-          slug: 'reflexity-ddr5-6000-16gb-kit',
-          sku: 'RFX-DDR5-6000-16-RGB',
-          description: 'High-performance DDR5 RAM for next-gen Intel and AMD platforms. 2×8GB dual-channel kit with XMP 3.0 support and RGB lighting.',
-          line: 'Gaming / Enthusiast',
-          generation: 'DDR5',
-          formFactor: 'UDIMM',
-          capacity: 16,
-          capacityLabel: '16GB',
-          kit: '2 × 8GB',
-          speed: 6000,
-          speedLabel: 'DDR5-6000',
-          cas: 'CL36',
-          timings: '36-36-36-76',
-          voltage: '1.35V',
-          ecc: false,
-          rgb: true,
-          heatspreader: 'Aluminium',
-          condition: 'New',
-          warranty: 'Lifetime',
-          price: 89.99,
-          compareAt: 109.99,
-          stock: 'in',
-          stockLabel: 'In stock',
-          stockQuantity: 50,
-          isFeatured: true,
-          tags: ['ddr5', 'gaming', 'rgb', 'xmp3'],
-          images: [],
-        },
-        {
-          name: 'Reflexity DDR5-5600 32GB Kit (2×16GB)',
-          slug: 'reflexity-ddr5-5600-32gb-kit',
-          sku: 'RFX-DDR5-5600-32',
-          description: 'Massive 32GB DDR5 kit for content creators and power users. 2×16GB with low-latency tuning and EXPO/XMP support.',
-          line: 'Workstation',
-          generation: 'DDR5',
-          formFactor: 'UDIMM',
-          capacity: 32,
-          capacityLabel: '32GB',
-          kit: '2 × 16GB',
-          speed: 5600,
-          speedLabel: 'DDR5-5600',
-          cas: 'CL40',
-          timings: '40-40-40-77',
-          voltage: '1.1V',
-          ecc: false,
-          rgb: false,
-          heatspreader: 'Aluminium',
-          condition: 'New',
-          warranty: 'Lifetime',
-          price: 149.99,
-          compareAt: 179.99,
-          stock: 'in',
-          stockLabel: 'In stock',
-          stockQuantity: 30,
-          isFeatured: true,
-          tags: ['ddr5', 'workstation', 'expo'],
-          images: [],
-        },
-        {
-          name: 'Reflexity DDR4-3600 16GB Kit (2×8GB)',
-          slug: 'reflexity-ddr4-3600-16gb-kit',
-          sku: 'RFX-DDR4-3600-16-RGB',
-          description: 'The sweet-spot DDR4 kit for AM4 and LGA1200 platforms. 2×8GB CL18 with XMP 2.0 and RGB lighting.',
-          line: 'Gaming / Enthusiast',
-          generation: 'DDR4',
-          formFactor: 'UDIMM',
-          capacity: 16,
-          capacityLabel: '16GB',
-          kit: '2 × 8GB',
-          speed: 3600,
-          speedLabel: 'DDR4-3600',
-          cas: 'CL18',
-          timings: '18-22-22-42',
-          voltage: '1.35V',
-          ecc: false,
-          rgb: true,
-          heatspreader: 'Aluminium',
-          condition: 'New',
-          warranty: 'Lifetime',
-          price: 49.99,
-          compareAt: 64.99,
-          stock: 'in',
-          stockLabel: 'In stock',
-          stockQuantity: 100,
-          isFeatured: true,
-          tags: ['ddr4', 'gaming', 'rgb', 'xmp2'],
-          images: [],
-        },
-        {
-          name: 'Reflexity DDR4-3200 32GB Kit (2×16GB)',
-          slug: 'reflexity-ddr4-3200-32gb-kit',
-          sku: 'RFX-DDR4-3200-32',
-          description: 'Reliable 32GB DDR4 for workstations and multi-tasking builds. 2×16GB CL16 with XMP 2.0.',
-          line: 'Workstation',
-          generation: 'DDR4',
-          formFactor: 'UDIMM',
-          capacity: 32,
-          capacityLabel: '32GB',
-          kit: '2 × 16GB',
-          speed: 3200,
-          speedLabel: 'DDR4-3200',
-          cas: 'CL16',
-          timings: '16-18-18-38',
-          voltage: '1.35V',
-          ecc: false,
-          rgb: false,
-          heatspreader: 'Aluminium',
-          condition: 'New',
-          warranty: 'Lifetime',
-          price: 79.99,
-          compareAt: 99.99,
-          stock: 'in',
-          stockLabel: 'In stock',
-          stockQuantity: 60,
-          isFeatured: false,
-          tags: ['ddr4', 'workstation'],
-          images: [],
-        },
-        {
-          name: 'Reflexity DDR5-6400 64GB Kit (2×32GB)',
-          slug: 'reflexity-ddr5-6400-64gb-kit',
-          sku: 'RFX-DDR5-6400-64-RGB',
-          description: 'Flagship 64GB DDR5 kit for extreme workloads. 2×32GB with Intel XMP 3.0 and AMD EXPO, RGB lighting.',
-          line: 'Gaming / Enthusiast',
-          generation: 'DDR5',
-          formFactor: 'UDIMM',
-          capacity: 64,
-          capacityLabel: '64GB',
-          kit: '2 × 32GB',
-          speed: 6400,
-          speedLabel: 'DDR5-6400',
-          cas: 'CL32',
-          timings: '32-39-39-102',
-          voltage: '1.4V',
-          ecc: false,
-          rgb: true,
-          heatspreader: 'Aluminium',
-          condition: 'New',
-          warranty: 'Lifetime',
-          price: 299.99,
-          compareAt: 349.99,
-          stock: 'in',
-          stockLabel: 'In stock',
-          stockQuantity: 20,
-          isFeatured: true,
-          tags: ['ddr5', 'flagship', 'rgb', 'xmp3', 'expo'],
-          images: [],
-        },
-        {
-          name: 'Reflexity SO-DIMM DDR4-3200 16GB',
-          slug: 'reflexity-sodimm-ddr4-3200-16gb',
-          sku: 'RFX-SODIMM-DDR4-3200-16',
-          description: 'Laptop-grade DDR4 SO-DIMM for notebook upgrades. Single 16GB stick, plug-and-play compatible.',
-          line: 'Laptop',
-          generation: 'DDR4',
-          formFactor: 'SO-DIMM',
-          capacity: 16,
-          capacityLabel: '16GB',
-          kit: '1 × 16GB',
-          speed: 3200,
-          speedLabel: 'DDR4-3200',
-          cas: 'CL22',
-          timings: '22-22-22-52',
-          voltage: '1.2V',
-          ecc: false,
-          rgb: false,
-          heatspreader: 'None',
-          condition: 'New',
-          warranty: 'Lifetime',
-          price: 39.99,
-          compareAt: 54.99,
-          stock: 'in',
-          stockLabel: 'In stock',
-          stockQuantity: 80,
-          isFeatured: false,
-          tags: ['ddr4', 'laptop', 'so-dimm'],
-          images: [],
-        },
-      ];
+  const products = [
+    { name: '32GB (2x16GB) DDR5-6000 CL30 EXPO Kit', slug: 'rfx-d5-32-6000-cl30-expo', sku: 'RFX-D5-32-6000-CL30', description: 'High-performance DDR5 for AMD AM5. 2x16GB EXPO + XMP 3.0.', line: 'Gaming / Enthusiast', generation: 'DDR5', formFactor: 'UDIMM', capacity: 32, capacityLabel: '32GB', kit: '2 x 16GB', speed: 6000, speedLabel: '6000 MT/s', cas: 'CL30', timings: '30-38-38-96', voltage: '1.35V', ecc: false, rgb: false, heatspreader: 'Aluminum, low-profile black', condition: 'New', warranty: 'Limited Lifetime', price: 119.0, compareAt: 139.0, stock: 'in', stockLabel: 'In stock', stockQuantity: 50, isFeatured: true, tags: ['DDR5','EXPO','AM5'], images: [] },
+    { name: '64GB (2x32GB) DDR5-6400 CL32 Kit', slug: 'rfx-d5-64-6400-cl32', sku: 'RFX-D5-64-6400-CL32', description: 'Massive 64GB DDR5 for workstations. 2x32GB XMP 3.0 + EXPO.', line: 'Workstation', generation: 'DDR5', formFactor: 'UDIMM', capacity: 64, capacityLabel: '64GB', kit: '2 x 32GB', speed: 6400, speedLabel: '6400 MT/s', cas: 'CL32', timings: '32-39-39-102', voltage: '1.4V', ecc: false, rgb: false, heatspreader: 'Aluminum, brushed silver', condition: 'New', warranty: 'Limited Lifetime', price: 219.0, compareAt: 259.0, stock: 'in', stockLabel: 'In stock', stockQuantity: 20, isFeatured: true, tags: ['DDR5','XMP','High Capacity'], images: [] },
+    { name: '32GB (2x16GB) DDR5 SO-DIMM 5600 CL46', slug: 'rfx-d5-so-32-5600', sku: 'RFX-D5-SO-32-5600', description: 'DDR5 SO-DIMM for laptops and mini-PCs. 2x16GB JEDEC.', line: 'Laptop / Mini-PC', generation: 'DDR5', formFactor: 'SO-DIMM', capacity: 32, capacityLabel: '32GB', kit: '2 x 16GB', speed: 5600, speedLabel: '5600 MT/s', cas: 'CL46', timings: '46-45-45-90', voltage: '1.1V', ecc: false, rgb: false, heatspreader: 'None (bare PCB)', condition: 'New', warranty: 'Limited Lifetime', price: 109.0, compareAt: 129.0, stock: 'in', stockLabel: 'In stock', stockQuantity: 40, isFeatured: false, tags: ['DDR5','SO-DIMM','Laptop'], images: [] },
+    { name: '32GB (2x16GB) DDR4-3600 CL16 XMP Kit', slug: 'rfx-d4-32-3600-cl16', sku: 'RFX-D4-32-3600-CL16', description: 'Sweet-spot DDR4 for AM4 and LGA1200. 2x16GB CL16 XMP 2.0.', line: 'Gaming / Enthusiast', generation: 'DDR4', formFactor: 'UDIMM', capacity: 32, capacityLabel: '32GB', kit: '2 x 16GB', speed: 3600, speedLabel: '3600 MT/s', cas: 'CL16', timings: '16-19-19-39', voltage: '1.35V', ecc: false, rgb: false, heatspreader: 'Aluminum, matte black', condition: 'New', warranty: 'Limited Lifetime', price: 89.0, compareAt: 109.0, stock: 'low', stockLabel: 'Low stock', stockQuantity: 8, isFeatured: true, tags: ['DDR4','XMP','Ryzen sweet-spot'], images: [] },
+    { name: '16GB (2x8GB) DDR4-3200 CL16 Kit', slug: 'rfx-d4-16-3200-cl16', sku: 'RFX-D4-16-3200-CL16', description: 'Reliable 16GB DDR4 for mainstream builds. 2x8GB CL16 XMP 2.0.', line: 'Mainstream', generation: 'DDR4', formFactor: 'UDIMM', capacity: 16, capacityLabel: '16GB', kit: '2 x 8GB', speed: 3200, speedLabel: '3200 MT/s', cas: 'CL16', timings: '16-18-18-38', voltage: '1.35V', ecc: false, rgb: false, heatspreader: 'Aluminum, low-profile', condition: 'New', warranty: 'Limited Lifetime', price: 39.0, compareAt: 49.0, stock: 'in', stockLabel: 'In stock', stockQuantity: 100, isFeatured: false, tags: ['DDR4','Value'], images: [] },
+    { name: '16GB (2x8GB) DDR4 SO-DIMM 3200 CL22', slug: 'rfx-d4-so-16-3200', sku: 'RFX-D4-SO-16-3200', description: 'Laptop DDR4 SO-DIMM. 2x8GB plug-and-play.', line: 'Laptop', generation: 'DDR4', formFactor: 'SO-DIMM', capacity: 16, capacityLabel: '16GB', kit: '2 x 8GB', speed: 3200, speedLabel: '3200 MT/s', cas: 'CL22', timings: '22-22-22-52', voltage: '1.2V', ecc: false, rgb: false, heatspreader: 'None', condition: 'New', warranty: 'Limited Lifetime', price: 42.0, compareAt: 54.0, stock: 'in', stockLabel: 'In stock', stockQuantity: 80, isFeatured: false, tags: ['DDR4','SO-DIMM'], images: [] },
+    { name: '64GB (2x32GB) DDR4 RDIMM ECC 2933', slug: 'rfx-d4-ecc-rd-64-2933', sku: 'RFX-D4-RD-64-2933', description: 'Server DDR4 RDIMM ECC for Xeon/EPYC. 2x32GB refurbished.', line: 'Server', generation: 'DDR4', formFactor: 'RDIMM', capacity: 64, capacityLabel: '64GB', kit: '2 x 32GB', speed: 2933, speedLabel: '2933 MT/s', cas: 'CL21', timings: '21-21-21-47', voltage: '1.2V', ecc: true, rgb: false, heatspreader: 'Industrial heatspreader', condition: 'Refurbished — Tested', warranty: '1 Year', price: 159.0, compareAt: 249.0, stock: 'in', stockLabel: 'In stock', stockQuantity: 15, isFeatured: false, tags: ['DDR4','ECC','Registered','Server'], images: [] },
+    { name: '128GB (2x64GB) DDR4 LRDIMM ECC 2666', slug: 'rfx-d4-ecc-lr-128-2666', sku: 'RFX-D4-LR-128-2666', description: 'High-density 128GB DDR4 LRDIMM ECC. 2x64GB refurbished.', line: 'Server', generation: 'DDR4', formFactor: 'LRDIMM', capacity: 128, capacityLabel: '128GB', kit: '2 x 64GB', speed: 2666, speedLabel: '2666 MT/s', cas: 'CL19', timings: '19-19-19-43', voltage: '1.2V', ecc: true, rgb: false, heatspreader: 'Industrial heatspreader', condition: 'Refurbished — Tested', warranty: '1 Year', price: 289.0, compareAt: 499.0, stock: 'low', stockLabel: 'Low stock', stockQuantity: 4, isFeatured: false, tags: ['DDR4','ECC','LRDIMM','High Density'], images: [] },
+    { name: '64GB DDR5 RDIMM ECC 4800', slug: 'rfx-d5-ecc-rd-64-4800', sku: 'RFX-D5-RD-64-4800', description: 'Server DDR5 RDIMM ECC for Xeon Sapphire Rapids / EPYC Genoa. Open-box tested.', line: 'Server', generation: 'DDR5', formFactor: 'RDIMM', capacity: 64, capacityLabel: '64GB', kit: '1 x 64GB', speed: 4800, speedLabel: '4800 MT/s', cas: 'CL40', timings: '40-39-39-77', voltage: '1.1V', ecc: true, rgb: false, heatspreader: 'Industrial heatspreader', condition: 'Open Box — Tested', warranty: '1 Year', price: 269.0, compareAt: 339.0, stock: 'in', stockLabel: 'In stock', stockQuantity: 10, isFeatured: false, tags: ['DDR5','ECC','Registered','Server'], images: [] },
+    { name: '32GB (2x16GB) DDR5-7200 CL34 Premium', slug: 'rfx-d5-32-7200-cl34', sku: 'RFX-D5-32-7200-CL34', description: 'Flagship DDR5-7200 for extreme Intel OC builds. 2x16GB CL34 XMP 3.0.', line: 'Gaming / Enthusiast', generation: 'DDR5', formFactor: 'UDIMM', capacity: 32, capacityLabel: '32GB', kit: '2 x 16GB', speed: 7200, speedLabel: '7200 MT/s', cas: 'CL34', timings: '34-42-42-108', voltage: '1.4V', ecc: false, rgb: false, heatspreader: 'Aluminum, brushed black', condition: 'New', warranty: 'Limited Lifetime', price: 169.0, compareAt: 199.0, stock: 'in', stockLabel: 'In stock', stockQuantity: 25, isFeatured: true, tags: ['DDR5','XMP','High Speed','Z790/Z890'], images: [] },
+  ];
 
-      await Product.insertMany(products);
-      results.products = products.length;
+  try {
+    let upserted = 0;
+    for (const p of products) {
+      await Product.findOneAndUpdate({ slug: p.slug }, { $set: p }, { upsert: true, new: true, runValidators: true });
+      upserted++;
     }
+    results.products = upserted;
   } catch (err) {
     results.errors.push(`Products: ${err.message}`);
   }
 
   const success = results.errors.length === 0;
-  return res.status(success ? 200 : 207).json({
-    success,
-    ...results,
-  });
+  return res.status(success ? 200 : 207).json({ success, ...results });
 });
 
 module.exports = router;

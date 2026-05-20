@@ -30,7 +30,7 @@ const productSchema = new mongoose.Schema({
   description: { type: String, trim: true },
   line: {
     type: String,
-    enum: ['Desktop', 'Laptop', 'Server', 'Gaming / Enthusiast', 'Workstation'],
+    enum: ['Desktop', 'Laptop', 'Laptop / Mini-PC', 'Server', 'Gaming / Enthusiast', 'Workstation', 'Mainstream'],
     required: true,
   },
   generation: {

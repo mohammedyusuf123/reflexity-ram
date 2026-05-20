@@ -135,7 +135,7 @@ export default function EditProduct() {
     if (!form) return;
     setSaving(true);
     try {
-      const data = {
+      const formPayload = {
         ...form,
         tags: typeof form.tags === 'string'
           ? form.tags.split(',').map(t => t.trim()).filter(Boolean)
@@ -154,10 +154,19 @@ export default function EditProduct() {
       };
 
       // Remove _id and internal fields from the update payload
-      const { _id, __v, createdAt, updatedAt, slug, sku, stock, ...updateData } = data;
+      const { _id, __v, createdAt, updatedAt, slug, sku, stock, ...updateData } = formPayload;
 
-      await adminApi.updateProduct(id, updateData);
-      toast.success('Product saved');
+      const { data } = await adminApi.updateProduct(id, updateData);
+      if (data?.product) {
+        setProduct(data.product);
+        setForm({
+          ...data.product,
+          tags: Array.isArray(data.product.tags) ? data.product.tags.join(', ') : (data.product.tags || ''),
+          compatibility: Array.isArray(data.product.compatibility) ? data.product.compatibility.join('\n') : (data.product.compatibility || ''),
+          included: Array.isArray(data.product.included) ? data.product.included.join('\n') : (data.product.included || ''),
+        });
+      }
+      toast.success('Product saved successfully');
       setDirty(false);
     } catch (err) {
       const details = err.response?.data?.details;

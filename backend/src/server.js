@@ -50,6 +50,8 @@ app.use(
       }
     },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id'],
+    exposedHeaders: ['x-session-id'],
   })
 );
 

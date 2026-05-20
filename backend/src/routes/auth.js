@@ -281,11 +281,16 @@ router.post(
         passwordResetExpires: resetExpires,
       });
 
-      await sendPasswordResetEmail({
-        email: user.email,
-        firstName: user.firstName,
-        token: resetToken,
-      });
+      try {
+        await sendPasswordResetEmail({
+          email: user.email,
+          firstName: user.firstName,
+          token: resetToken,
+        });
+      } catch (emailErr) {
+        // Log email failure but don't expose it to the user
+        console.error('Password reset email failed:', emailErr.message);
+      }
 
       res.json({ message: 'If an account exists, a reset email has been sent.' });
     } catch (err) {

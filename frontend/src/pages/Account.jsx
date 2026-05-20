@@ -7,7 +7,7 @@ import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 import EmptyState from '@/components/EmptyState';
 import useAuthStore from '@/lib/authStore';
-import { ordersApi } from '@/lib/api';
+import { ordersApi, authApi } from '@/lib/api';
 
 const STATUS_PILLS = {
   pending: 'pill-amber',
@@ -29,8 +29,21 @@ export default function Account() {
   const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', phone: '' });
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [saving, setSaving] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
 
   const { user, logout, updateProfile, changePassword, isAuthenticated } = useAuthStore();
+
+  const handleResendVerification = async () => {
+    setResendingVerification(true);
+    try {
+      await authApi.resendVerification();
+      toast.success('Verification email sent — check your inbox');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to send verification email');
+    } finally {
+      setResendingVerification(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -95,10 +108,24 @@ export default function Account() {
           {user && (
             <p className="text-neutral-400 text-[14px] mt-1">
               {user.firstName} {user.lastName} · {user.email}
-              {!user.isEmailVerified && (
-                <span className="ml-2 text-amber-400 text-[12px]">⚠ Email not verified</span>
-              )}
             </p>
+          )}
+          {user && !user.isEmailVerified && (
+            <div className="mt-3 flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-[13px]">
+              <AlertTriangle size={15} className="text-amber-400 shrink-0" />
+              <span className="text-amber-200">Your email address is not verified.</span>
+              <button
+                onClick={handleResendVerification}
+                disabled={resendingVerification}
+                className="ml-auto btn-ghost text-[12px] text-amber-300 hover:text-amber-100 disabled:opacity-50"
+              >
+                {resendingVerification ? (
+                  <><Loader2 size={12} className="animate-spin" /> Sending…</>
+                ) : (
+                  'Resend verification email'
+                )}
+              </button>
+            </div>
           )}
         </div>
 

@@ -84,8 +84,20 @@ function ImageUploader({ images, onChange }) {
   );
 }
 
+function normalizeProduct(p) {
+  if (!p) return EMPTY_PRODUCT;
+  return {
+    ...EMPTY_PRODUCT,
+    ...p,
+    // Convert arrays back to editable strings for form inputs
+    tags: Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || ''),
+    compatibility: Array.isArray(p.compatibility) ? p.compatibility.join('\n') : (p.compatibility || ''),
+    included: Array.isArray(p.included) ? p.included.join('\n') : (p.included || ''),
+    compareAt: p.compareAt || '',
+  };
+}
 function ProductModal({ product, onClose, onSave }) {
-  const [form, setForm] = useState(product || EMPTY_PRODUCT);
+  const [form, setForm] = useState(() => normalizeProduct(product));
   const [saving, setSaving] = useState(false);
   const isEdit = !!product?._id;
 

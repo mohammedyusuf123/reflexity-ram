@@ -2,7 +2,9 @@ const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Reflexity RAM <noreply@reflexityram.com>';
+// onboarding@resend.dev works without domain verification (Resend's default test sender).
+// Set FROM_EMAIL env var to a verified domain address for production.
+const FROM_EMAIL = process.env.FROM_EMAIL || 'Reflexity RAM <onboarding@resend.dev>';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 /**

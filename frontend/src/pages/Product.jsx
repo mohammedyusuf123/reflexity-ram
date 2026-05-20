@@ -87,16 +87,24 @@ export default function Product() {
     );
   }
 
-  const addToCart = () => {
-    addItem(p, qty);
+  const addToCart = async () => {
+    const result = await addItem(p.slug, qty);
+    if (result && !result.success) {
+      toast.error(result.message || 'Failed to add to cart');
+      return;
+    }
     toast.success("Added to cart", {
       description: `${qty} × ${p.name}`,
       icon: <Check size={16} className="text-emerald-400" />,
     });
   };
 
-  const buyNow = () => {
-    addItem(p, qty);
+  const buyNow = async () => {
+    const result = await addItem(p.slug, qty);
+    if (result && !result.success) {
+      toast.error(result.message || 'Failed to add to cart');
+      return;
+    }
     navigate("/checkout");
   };
 

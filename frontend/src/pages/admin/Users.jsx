@@ -96,6 +96,7 @@ export default function AdminUsers() {
                 <tr className="text-neutral-500 text-[11px] uppercase tracking-widest border-b border-white/5">
                   <th className="text-left p-4 font-normal">User</th>
                   <th className="text-left p-4 font-normal">Email</th>
+                  <th className="text-left p-4 font-normal hidden md:table-cell">Phone</th>
                   <th className="text-left p-4 font-normal">Role</th>
                   <th className="text-left p-4 font-normal">Status</th>
                   <th className="text-right p-4 font-normal">Joined</th>
@@ -105,14 +106,14 @@ export default function AdminUsers() {
               <tbody className="divide-y divide-white/5">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-neutral-500">
+                    <td colSpan={7} className="p-8 text-center text-neutral-500">
                       <Loader2 size={16} className="animate-spin inline mr-2" />
                       Loading…
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-neutral-500">No users found</td>
+                    <td colSpan={7} className="p-8 text-center text-neutral-500">No users found</td>
                   </tr>
                 ) : (
                   users.map((u) => (
@@ -124,6 +125,9 @@ export default function AdminUsers() {
                         )}
                       </td>
                       <td className="p-4 text-neutral-400">{u.email}</td>
+                      <td className="p-4 text-neutral-400 hidden md:table-cell mono text-[12px]">
+                        {u.phone || <span className="text-neutral-600">—</span>}
+                      </td>
                       <td className="p-4">
                         <span className={`pill text-[10px] py-0.5 ${u.role === 'admin' ? 'pill-accent' : 'pill-blue'}`}>
                           {u.role}

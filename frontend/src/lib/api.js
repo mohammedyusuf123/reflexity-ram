@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://reflexity-ram.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -30,11 +30,20 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && error.response?.data?.code === 'TOKEN_EXPIRED') {
-      // Clear stale token and redirect to login
-      localStorage.removeItem('rfx_token');
-      window.dispatchEvent(new CustomEvent('auth:expired'));
+    const { response } = error;
+    if (response?.status === 401) {
+      if (response.data?.code === 'TOKEN_EXPIRED' || response.data?.error === 'Invalid token') {
+        console.warn('[Auth] Token invalid or expired, clearing session');
+        localStorage.removeItem('rfx_token');
+        window.dispatchEvent(new CustomEvent('auth:expired'));
+      }
     }
+    
+    // Log CORS or Network errors specifically for debugging
+    if (!response) {
+      console.error('[API] Network Error / CORS issue. Check if backend is alive and allows this origin:', window.location.origin);
+    }
+
     return Promise.reject(error);
   }
 );

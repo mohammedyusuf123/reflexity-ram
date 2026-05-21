@@ -36,6 +36,8 @@ const defaultAllowedOrigins = [
   'https://reflexityram.com',
   'https://www.reflexityram.com',
   'https://reflexity-ram2.pages.dev',
+  'https://reflexity-ram.pages.dev',
+  'https://reflexityram.pages.dev',
   ...(process.env.NODE_ENV === 'production'
     ? []
     : ['http://localhost:5173', 'http://localhost:3000']),

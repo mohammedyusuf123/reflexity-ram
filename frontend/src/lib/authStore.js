@@ -10,7 +10,10 @@ const useAuthStore = create(
       isLoading: false,
       isInitialized: false,
 
-      // Initialize auth state from stored token
+      // Initialize auth state from stored token.
+      // Only clears the session on a definitive 401/403 (invalid/expired token).
+      // Network errors (backend cold-start, timeout) preserve the persisted state
+      // so the user is not logged out due to a transient connectivity issue.
       initialize: async () => {
         const token = localStorage.getItem('rfx_token');
         if (!token) {
@@ -20,9 +23,19 @@ const useAuthStore = create(
         try {
           const { data } = await authApi.me();
           set({ user: data.user, token, isInitialized: true });
-        } catch {
-          localStorage.removeItem('rfx_token');
-          set({ user: null, token: null, isInitialized: true });
+        } catch (err) {
+          const status = err.response?.status;
+          if (status === 401 || status === 403) {
+            // Token is definitively invalid or expired — clear the session
+            console.warn('[Auth] Token rejected by server, clearing session');
+            localStorage.removeItem('rfx_token');
+            set({ user: null, token: null, isInitialized: true });
+          } else {
+            // Network error, timeout, or backend cold-start — keep persisted state
+            console.warn('[Auth] /me request failed (network/server error), keeping persisted session. Status:', status);
+            const persisted = get();
+            set({ isInitialized: true, user: persisted.user, token: persisted.token });
+          }
         }
       },
 

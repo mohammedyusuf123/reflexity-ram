@@ -68,10 +68,10 @@ const PRODUCTS = [
     included: ['2 × DDR4 UDIMM modules'],
     isFeatured: true,
   },
-  {
-    slug: 'rfx-d5-32-5600-cl36',
-    sku: 'RFX-D5-32-5600-CL36',
-    name: '32GB (2x16GB) DDR5-5600 CL36 Desktop',
+    {
+      slug: 'rfx-d5-32-5600-cl36',
+      sku: 'RFX-D5-32-5600-CL36',
+      name: '32GB (2x16GB) DDR5-5600 CL36 Desktop - MANUS FIXED',
     line: 'Desktop',
     generation: 'DDR5',
     formFactor: 'UDIMM',
@@ -226,7 +226,10 @@ async function seed() {
       });
       console.log(`  ✓ Admin user created: ${adminEmail}`);
     } else {
-      console.log(`  ℹ Admin user already exists: ${adminEmail}`);
+      existingAdmin.password = adminPassword;
+      existingAdmin.role = 'admin';
+      await existingAdmin.save();
+      console.log(`  ✓ Admin user updated: ${adminEmail}`);
     }
 
     console.log('\n✅ Seed complete!');

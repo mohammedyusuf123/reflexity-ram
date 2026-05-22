@@ -406,4 +406,10 @@ router.post(
   }
 );
 
+// ─── GET /api/auth/google/callback ───────────────────────────────────────────
+router.get('/google/callback', async (req, res) => {
+  res.send('Google callback route works');
+});
+
 module.exports = router;
+

@@ -221,22 +221,18 @@ router.patch(
   }
 );
 
-// DELETE /api/admin/products/:id (soft delete)
+// DELETE /api/admin/products/:id (hard delete)
 router.delete(
   '/products/:id',
   [param('id').custom((v) => isValidObjectId(v)).withMessage('Invalid product ID')],
   validate,
   async (req, res) => {
     try {
-      const product = await Product.findByIdAndUpdate(
-        req.params.id,
-        { isActive: false },
-        { new: true }
-      );
+      const product = await Product.findByIdAndDelete(req.params.id);
       if (!product) return res.status(404).json({ error: 'Product not found' });
-      res.json({ message: 'Product deactivated' });
+      res.json({ message: 'Product deleted' });
     } catch (err) {
-      res.status(500).json({ error: 'Failed to deactivate product' });
+      res.status(500).json({ error: 'Failed to delete product' });
     }
   }
 );

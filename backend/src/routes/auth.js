@@ -1,4 +1,5 @@
 const express = require('express');
+const { generateState, buildGoogleAuthUrl, exchangeCodeForTokens, getGoogleUserInfo } = require('../utils/googleOAuth');
 const crypto = require('crypto');
 const { body } = require('express-validator');
 const User = require('../models/User');
@@ -406,10 +407,95 @@ router.post(
   }
 );
 
-// ─── GET /api/auth/google/callback ───────────────────────────────────────────
+// ─── GET /api/auth/google ──────────────────────────────────────────────────────
+router.get('/google', (req, res) => {
+  const { GOOGLE_CLIENT_ID, GOOGLE_CALLBACK_URL } = process.env;
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CALLBACK_URL) {
+    return res.status(503).json({ error: 'Google OAuth not configured' });
+  }
+  const state = generateState();
+  res.cookie('oauth_state', state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: 10 * 60 * 1000,
+  });
+  res.redirect(buildGoogleAuthUrl(GOOGLE_CLIENT_ID, GOOGLE_CALLBACK_URL, state));
+});
+
+// ─── GET /api/auth/google/callback ────────────────────────────────────────────
 router.get('/google/callback', async (req, res) => {
-  res.send('Google callback route works');
+  const FRONTEND_URL = process.env.FRONTEND_URL || 'https://reflexityram.com';
+  const fail = (reason) => res.redirect(`${FRONTEND_URL}/auth/callback?auth_error=${reason}`);
+
+  const { code, error, state } = req.query;
+  const storedState = req.cookies?.oauth_state;
+
+  if (!state || !storedState || state !== storedState) {
+    return fail('state_mismatch');
+  }
+
+  res.clearCookie('oauth_state', { httpOnly: true, secure: true, sameSite: 'none' });
+
+  if (error || !code) return fail('google_denied');
+
+  try {
+    const tokens = await exchangeCodeForTokens(
+      code,
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_CALLBACK_URL
+    );
+    if (!tokens.access_token) return fail('token_exchange_failed');
+
+    const profile = await getGoogleUserInfo(tokens.access_token);
+    if (!profile.email) return fail('no_email');
+
+    const email = profile.email.toLowerCase();
+    let user = await User.findOne({ $or: [{ googleId: profile.id }, { email }] });
+
+    if (user) {
+      if (!user.googleId) user.googleId = profile.id;
+      if (!user.avatar && profile.picture) user.avatar = profile.picture;
+      if (!user.isEmailVerified) user.isEmailVerified = true;
+      user.lastLoginAt = new Date();
+      await user.save({ validateBeforeSave: false });
+    } else {
+      const nameParts = (profile.name || '').split(' ');
+      user = await User.create({
+        email,
+        googleId: profile.id,
+        firstName: profile.given_name || nameParts[0] || 'User',
+        lastName: profile.family_name || nameParts.slice(1).join(' ') || '',
+        avatar: profile.picture || null,
+        isEmailVerified: true,
+        isActive: true,
+        lastLoginAt: new Date(),
+      });
+    }
+
+    if (!user.isActive) return fail('account_deactivated');
+
+    const token = generateAccessToken(user._id);
+    setAuthCookie(res, token);
+
+    const userData = encodeURIComponent(JSON.stringify({
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
+      avatar: user.avatar || null,
+    }));
+
+    res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&user=${userData}`);
+  } catch (err) {
+    console.error('Google OAuth callback error:', err);
+    fail('server_error');
+  }
 });
 
 module.exports = router;
+
 

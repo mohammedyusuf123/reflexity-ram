@@ -70,6 +70,11 @@ const useAuthStore = create(
         }
       },
 
+      setGoogleAuth: (token, user) => {
+        localStorage.setItem('rfx_token', token);
+        set({ user, token, isLoading: false });
+      },
+
       logout: async () => {
         try {
           await authApi.logout();

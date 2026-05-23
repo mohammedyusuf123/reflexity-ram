@@ -19,6 +19,12 @@ const SORTS = [
 
 // Derive a human-readable category label from URL params
 function getCategoryLabel(gen, form, eccOnly) {
+  // Top-level category names (form only, no gen prefix)
+  if (form.length === 1 && gen.length === 0) {
+    const map = { UDIMM: "Desktop RAM", "SO-DIMM": "Laptop RAM", RDIMM: "Server RAM", LRDIMM: "Server RAM" };
+    if (map[form[0]]) return map[form[0]];
+  }
+  // Specific sub-category (gen + form)
   const parts = [];
   if (gen.length === 1) parts.push(gen[0]);
   if (form.length === 1) {

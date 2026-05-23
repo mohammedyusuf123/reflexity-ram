@@ -61,8 +61,8 @@ export default function Footer() {
             reflexityram@gmail.com
           </a>
           <div className="mt-4 flex items-center gap-2 text-[11px] mono text-neutral-500" data-testid="footer-status">
-            <span className="dot dot-green pulse-dot" />
-            Operational
+            <span className="dot dot-amber pulse-dot" />
+            Demo — Work in Progress
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
-  Search, ShoppingCart, User, Menu, X,
+  ShoppingCart, User, Menu, X,
   ChevronDown, LogOut, LayoutDashboard,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import useCartStore from "@/lib/cartStore";
 import useAuthStore from "@/lib/authStore";
 
 const NAV = [
-  { to: "/shop", label: "Shop" },
+  { to: "/categories", label: "Shop RAM" },
   { to: "/support", label: "Support" },
 ];
 
@@ -21,7 +21,6 @@ export default function Header() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authTab, setAuthTab] = useState("signin");
   const [accountOpen, setAccountOpen] = useState(false);
-  const [q, setQ] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,12 +31,6 @@ export default function Header() {
     setOpen(false);
     setAccountOpen(false);
   }, [location.pathname, location.search]);
-
-  const onSearch = (e) => {
-    e.preventDefault();
-    const query = q.trim();
-    navigate(query ? `/shop?q=${encodeURIComponent(query)}` : "/shop");
-  };
 
   const openAuth = (tab) => {
     setAuthTab(tab);
@@ -54,6 +47,8 @@ export default function Header() {
     <>
       <header className="header-blur fixed top-0 left-0 right-0 z-50" data-testid="site-header">
         <div className="container-tight flex items-center gap-4 py-3.5">
+
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0" data-testid="header-logo-link">
             <ReflexityMark size={32} />
             <div className="hidden sm:block leading-tight">
@@ -62,35 +57,21 @@ export default function Header() {
             </div>
           </Link>
 
+          {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-1 ml-4" data-testid="header-nav">
             {NAV.map((n) => (
               <Link
                 key={n.label}
                 to={n.to}
                 className="px-3 py-2 text-[13px] text-neutral-400 hover:text-white transition-colors rounded-full"
-                data-testid={`nav-${n.label.toLowerCase()}`}
+                data-testid={`nav-${n.label.toLowerCase().replace(/\s+/g, "-")}`}
               >
                 {n.label}
               </Link>
             ))}
           </nav>
 
-          <form
-            onSubmit={onSearch}
-            className="hidden md:flex items-center flex-1 max-w-md ml-2 relative"
-            data-testid="header-search-form"
-          >
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-            <input
-              type="text"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search DDR5, CL30, ECC, 32GB…"
-              className="input pl-9 py-2 text-[13px]"
-              data-testid="header-search-input"
-            />
-          </form>
-
+          {/* Right side */}
           <div className="flex items-center gap-2 ml-auto">
             <div className="hidden md:block mr-1">
               <ThemeToggle />
@@ -208,17 +189,6 @@ export default function Header() {
         {open && (
           <div className="lg:hidden border-t border-white/5 bg-black/90 backdrop-blur-xl" data-testid="header-mobile-drawer">
             <div className="container-tight py-4 flex flex-col gap-1">
-              <form onSubmit={onSearch} className="relative mb-3">
-                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
-                <input
-                  type="text"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search memory…"
-                  className="input pl-9 py-2.5 text-[13px]"
-                  data-testid="mobile-search-input"
-                />
-              </form>
               {NAV.map((n) => (
                 <Link key={n.label} to={n.to} className="px-3 py-2.5 text-sm text-neutral-300 hover:text-white">
                   {n.label}
@@ -249,13 +219,13 @@ export default function Header() {
                       className="w-full text-left px-3 py-2.5 text-sm text-neutral-300 hover:text-white flex items-center gap-2"
                       data-testid="mobile-signin-btn"
                     >
-                      <LogOut size={15} /> Sign in
+                      Sign in
                     </button>
                     <button
                       onClick={() => openAuth("signup")}
                       className="w-full text-left px-3 py-2.5 text-sm text-neutral-300 hover:text-white flex items-center gap-2"
                     >
-                      <User size={15} /> Create account
+                      Create account
                     </button>
                   </>
                 )}

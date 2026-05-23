@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Search, X, SlidersHorizontal, Inbox } from "lucide-react";
+import { useSearchParams, Link } from "react-router-dom";
+import { Search, X, SlidersHorizontal, Inbox, ArrowLeft } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -17,11 +17,19 @@ const SORTS = [
   { value: "capacity-desc", label: "Capacity: High → Low" },
 ];
 
+// Derive a human-readable category label from URL params
+function getCategoryLabel(gen, form, eccOnly) {
+  const parts = [];
+  if (gen.length === 1) parts.push(gen[0]);
+  if (form.length === 1) {
+    const map = { UDIMM: "Desktop", "SO-DIMM": "Laptop", RDIMM: "Server", LRDIMM: "Server" };
+    parts.unshift(map[form[0]] || form[0]);
+  }
+  if (eccOnly) parts.push("ECC");
+  return parts.length ? parts.join(" ") : "All Memory";
+}
+
 export default function Shop() {
-  useSEO({
-    title: "Shop memory",
-    description: "Browse DDR4 / DDR5 / Server / Laptop memory. Spec-first search with full filter set.",
-  });
   const [params, setParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [products, setProducts] = useState([]);
@@ -36,7 +44,13 @@ export default function Shop() {
   const eccOnly = params.get("ecc") === "true";
   const sort = params.get("sort") || "featured";
 
-  // Always fetch fresh product data from the API on page load
+  const categoryLabel = getCategoryLabel(gen, form, eccOnly);
+
+  useSEO({
+    title: `${categoryLabel} — Reflexity RAM`,
+    description: `Shop ${categoryLabel} memory at Reflexity RAM.`,
+  });
+
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -80,40 +94,21 @@ export default function Shop() {
       if (eccOnly && !p.ecc) return false;
       if (q) {
         const hay = [
-          p.sku,
-          p.name,
-          p.line,
-          p.generation,
-          p.formFactor,
-          p.speedLabel,
-          p.cas,
-          p.timings,
-          p.capacityLabel,
-          p.ecc ? "ECC" : "",
-          ...(p.tags || []),
-        ]
-          .join(" ")
-          .toLowerCase();
+          p.sku, p.name, p.line, p.generation, p.formFactor,
+          p.speedLabel, p.cas, p.timings, p.capacityLabel,
+          p.ecc ? "ECC" : "", ...(p.tags || []),
+        ].join(" ").toLowerCase();
         if (!hay.includes(q.toLowerCase())) return false;
       }
       return true;
     });
 
     switch (sort) {
-      case "price-asc":
-        out = [...out].sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        out = [...out].sort((a, b) => b.price - a.price);
-        break;
-      case "speed-desc":
-        out = [...out].sort((a, b) => b.speed - a.speed);
-        break;
-      case "capacity-desc":
-        out = [...out].sort((a, b) => b.capacity - a.capacity);
-        break;
-      default:
-        break;
+      case "price-asc":  out = [...out].sort((a, b) => a.price - b.price); break;
+      case "price-desc": out = [...out].sort((a, b) => b.price - a.price); break;
+      case "speed-desc": out = [...out].sort((a, b) => b.speed - a.speed); break;
+      case "capacity-desc": out = [...out].sort((a, b) => b.capacity - a.capacity); break;
+      default: break;
     }
     return out;
   }, [products, q, gen, form, cap, cond, eccOnly, sort]);
@@ -125,55 +120,26 @@ export default function Shop() {
     <div className="flex flex-col gap-6">
       <FilterGroup title="Generation">
         {filterOptions.generation.map((g) => (
-          <FilterCheck
-            key={g}
-            label={g}
-            checked={gen.includes(g)}
-            onChange={() => toggleArr("gen", g)}
-            testId={`filter-gen-${g}`}
-          />
+          <FilterCheck key={g} label={g} checked={gen.includes(g)} onChange={() => toggleArr("gen", g)} testId={`filter-gen-${g}`} />
         ))}
       </FilterGroup>
       <FilterGroup title="Form factor">
         {filterOptions.formFactor.map((f) => (
-          <FilterCheck
-            key={f}
-            label={f}
-            checked={form.includes(f)}
-            onChange={() => toggleArr("form", f)}
-            testId={`filter-form-${f}`}
-          />
+          <FilterCheck key={f} label={f} checked={form.includes(f)} onChange={() => toggleArr("form", f)} testId={`filter-form-${f}`} />
         ))}
       </FilterGroup>
       <FilterGroup title="Capacity">
         {filterOptions.capacity.map((c) => (
-          <FilterCheck
-            key={c}
-            label={`${c}GB`}
-            checked={cap.includes(c)}
-            onChange={() => toggleArr("cap", c)}
-            testId={`filter-cap-${c}`}
-          />
+          <FilterCheck key={c} label={`${c}GB`} checked={cap.includes(c)} onChange={() => toggleArr("cap", c)} testId={`filter-cap-${c}`} />
         ))}
       </FilterGroup>
       <FilterGroup title="Condition">
         {filterOptions.condition.map((c) => (
-          <FilterCheck
-            key={c}
-            label={c}
-            checked={cond.includes(c)}
-            onChange={() => toggleArr("cond", c)}
-            testId={`filter-cond-${c}`}
-          />
+          <FilterCheck key={c} label={c} checked={cond.includes(c)} onChange={() => toggleArr("cond", c)} testId={`filter-cond-${c}`} />
         ))}
       </FilterGroup>
       <FilterGroup title="ECC">
-        <FilterCheck
-          label="ECC only"
-          checked={eccOnly}
-          onChange={() => update("ecc", eccOnly ? null : "true")}
-          testId="filter-ecc-only"
-        />
+        <FilterCheck label="ECC only" checked={eccOnly} onChange={() => update("ecc", eccOnly ? null : "true")} testId="filter-ecc-only" />
       </FilterGroup>
     </div>
   );
@@ -183,14 +149,24 @@ export default function Shop() {
       <Header />
       <main className="page" data-testid="shop-page">
         <div className="container-tight pt-10 pb-16">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+
+          {/* Back link */}
+          <Link
+            to="/categories"
+            className="inline-flex items-center gap-1.5 text-[13px] text-neutral-500 hover:text-white transition-colors mb-6"
+            data-testid="shop-back-to-categories"
+          >
+            <ArrowLeft size={13} /> All categories
+          </Link>
+
+          {/* Page header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 pb-6 border-b border-white/5">
             <div>
-              <div className="section-label" data-testid="shop-section-label">
-                <span className="num">02</span> / Shop
-              </div>
-              <h1 className="display-2 display-grad mt-3">All memory.</h1>
-              <p className="text-[14px] text-neutral-500 mt-2">
-                {loading ? "Loading…" : `${filtered.length} ${filtered.length === 1 ? "module" : "modules"} · spec-first browsing`}
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                {categoryLabel}
+              </h1>
+              <p className="text-[13px] text-neutral-500 mt-1.5">
+                {loading ? "Loading…" : `${filtered.length} ${filtered.length === 1 ? "result" : "results"}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -217,18 +193,15 @@ export default function Shop() {
             </div>
           </div>
 
-          {/* Search */}
+          {/* Inline search */}
           <div className="relative mb-4">
-            <Search
-              size={16}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500"
-            />
+            <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
             <input
               type="text"
               value={q}
               onChange={(e) => update("q", e.target.value || null)}
-              placeholder="Search by SKU, spec, generation, CAS, ECC…"
-              className="input pl-11 py-3.5 text-[14px]"
+              placeholder="Filter by SKU, speed, capacity, CAS…"
+              className="input pl-10 py-3 text-[13px]"
               data-testid="shop-search-input"
             />
             {q && (
@@ -237,13 +210,13 @@ export default function Shop() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/5 flex items-center justify-center text-neutral-400"
                 data-testid="shop-search-clear"
               >
-                <X size={14} />
+                <X size={13} />
               </button>
             )}
           </div>
 
           {activeCount > 0 && (
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-5">
               <button
                 onClick={clearAll}
                 className="mono text-[11px] text-neutral-400 hover:text-white inline-flex items-center gap-1"
@@ -254,7 +227,7 @@ export default function Shop() {
             </div>
           )}
 
-          <div className="grid md:grid-cols-[260px_1fr] gap-8">
+          <div className="grid md:grid-cols-[220px_1fr] gap-8">
             {/* Desktop filters */}
             <aside className="hidden md:block" data-testid="shop-filters-sidebar">
               <FilterBody />
@@ -265,7 +238,7 @@ export default function Shop() {
               {loading ? (
                 <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" data-testid="shop-loading">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="glass rounded-xl overflow-hidden">
+                    <div key={i} className="border border-white/8 rounded-xl overflow-hidden">
                       <div className="skeleton aspect-[5/4]" />
                       <div className="p-5 space-y-3">
                         <div className="skeleton h-3 w-1/3" />
@@ -287,10 +260,10 @@ export default function Shop() {
               ) : filtered.length === 0 ? (
                 <EmptyState
                   icon={Inbox}
-                  title="No modules match these filters"
-                  description="Try widening capacity, switching generation, or clearing filters."
-                  ctaLabel="Clear filters"
-                  ctaTo="/shop"
+                  title="No products in this category yet"
+                  description="Check back soon or contact us to source a specific part."
+                  ctaLabel="Back to categories"
+                  ctaTo="/categories"
                   secondaryLabel="Email us"
                   secondaryTo="/support"
                   testId="shop-empty-state"
@@ -318,7 +291,7 @@ export default function Shop() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Filters</h3>
+                <h3 className="text-base font-semibold">Filters</h3>
                 <button
                   onClick={() => setShowFilters(false)}
                   className="w-9 h-9 rounded-full hover:bg-white/5 flex items-center justify-center"
@@ -329,20 +302,8 @@ export default function Shop() {
               </div>
               <FilterBody />
               <div className="sticky bottom-0 -mx-6 mt-8 px-6 py-4 bg-[#0a0a0c]/95 backdrop-blur border-t border-white/10 flex gap-2">
-                <button
-                  onClick={clearAll}
-                  className="btn-secondary flex-1"
-                  data-testid="mobile-filters-clear"
-                >
-                  Clear
-                </button>
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="btn-primary flex-1"
-                  data-testid="mobile-filters-apply"
-                >
-                  Apply
-                </button>
+                <button onClick={clearAll} className="btn-secondary flex-1" data-testid="mobile-filters-clear">Clear</button>
+                <button onClick={() => setShowFilters(false)} className="btn-primary flex-1" data-testid="mobile-filters-apply">Apply</button>
               </div>
             </div>
           </div>
@@ -356,7 +317,7 @@ export default function Shop() {
 function FilterGroup({ title, children }) {
   return (
     <div>
-      <div className="mono text-[10px] text-neutral-500 uppercase tracking-widest mb-3">
+      <div className="text-[11px] text-neutral-500 uppercase tracking-widest mb-3 font-medium">
         {title}
       </div>
       <div className="flex flex-col gap-2">{children}</div>
@@ -372,9 +333,7 @@ function FilterCheck({ label, checked, onChange, testId }) {
     >
       <span
         className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-          checked
-            ? "bg-white border-white"
-            : "border-white/20 group-hover:border-white/40 bg-transparent"
+          checked ? "bg-white border-white" : "border-white/20 group-hover:border-white/40 bg-transparent"
         }`}
       >
         {checked && (
@@ -383,12 +342,7 @@ function FilterCheck({ label, checked, onChange, testId }) {
           </svg>
         )}
       </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="sr-only"
-      />
+      <input type="checkbox" checked={checked} onChange={onChange} className="sr-only" />
       <span className="text-neutral-300 group-hover:text-white">{label}</span>
     </label>
   );

@@ -19,6 +19,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import NotFound from "@/pages/NotFound";
 import AuthCallback from "@/pages/AuthCallback";
+import Categories from "@/pages/Categories";
 
 // Policy pages
 import Shipping from "@/pages/policies/Shipping";
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/products/edit/:id" element={<AdminEditProduct />} />
 
+          <Route path="/categories" element={<Categories />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

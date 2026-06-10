@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const User = require('../models/User');
+const Cart = require('../models/Cart');
 const { validate } = require('../middleware/validate');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { sendShippingNotificationEmail } = require('../utils/email');
@@ -460,6 +461,39 @@ router.patch(
       res.json({ user });
     } catch (err) {
       res.status(500).json({ error: 'Failed to update user' });
+    }
+  }
+);
+
+// DELETE /api/admin/users/:id
+router.delete(
+  '/users/:id',
+  [param('id').custom((v) => isValidObjectId(v)).withMessage('Invalid user ID')],
+  validate,
+  async (req, res) => {
+    try {
+      // SECURITY: Prevent admin from deleting themselves
+      if (req.params.id === req.user._id.toString()) {
+        return res.status(400).json({ error: 'You cannot delete your own account' });
+      }
+
+      // Check if user exists
+      const user = await User.findById(req.params.id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      // SECURITY: Prevent deleting other admins unless you are a super admin? 
+      // For now, any admin can delete customers, but maybe not other admins.
+      // Let's stick to simple: admin can delete any account except their own.
+      
+      await User.findByIdAndDelete(req.params.id);
+      
+      // Cleanup: Delete user's cart
+      await Cart.findOneAndDelete({ user: req.params.id });
+
+      res.json({ message: 'User account deleted successfully' });
+    } catch (err) {
+      console.error('Delete user error:', err);
+      res.status(500).json({ error: 'Failed to delete user' });
     }
   }
 );

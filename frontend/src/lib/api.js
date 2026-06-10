@@ -122,6 +122,7 @@ export const adminApi = {
   // Users
   listUsers: (params) => api.get('/admin/users', { params }),
   updateUser: (id, data) => api.patch(`/admin/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
   getUserOrders: (id) => api.get(`/admin/users/${id}/orders`),
 
   // Upload

@@ -55,8 +55,7 @@ function CheckoutForm({ shippingData, shippingMethod, onSuccess }) {
         // Create order in backend
         const orderData = {
           shippingAddress: shippingData,
-          shippingMethod: selectedShipping.label,
-          shippingCost: selectedShipping.price,
+          shippingMethod: selectedShipping.id, // server looks up the price by ID
           stripePaymentIntentId: paymentIntent.id,
           guestEmail: !user ? shippingData.email : undefined,
         };
@@ -164,8 +163,7 @@ export default function Checkout() {
     setLoadingIntent(true);
     try {
       const { data } = await stripeApi.createPaymentIntent({
-        shippingCost: shippingOption.price,
-        shippingMethod: shippingOption.label,
+        shippingMethod: shippingOption.id, // server looks up the price by ID
       });
       setClientSecret(data.clientSecret);
       setStep('payment');

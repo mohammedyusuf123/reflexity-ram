@@ -35,7 +35,6 @@ import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminProducts from "@/pages/admin/Products";
 import AdminOrders from "@/pages/admin/Orders";
 import AdminUsers from "@/pages/admin/Users";
-import AdminEditProduct from "@/pages/admin/EditProduct";
 
 export default function App() {
   useApplyTheme();
@@ -87,7 +86,6 @@ export default function App() {
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/products/edit/:id" element={<AdminEditProduct />} />
 
           <Route path="/categories" element={<Categories />} />
           <Route path="/auth/callback" element={<AuthCallback />} />

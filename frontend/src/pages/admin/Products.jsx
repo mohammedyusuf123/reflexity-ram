@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Plus, Pencil, Trash2, Upload, X, Check, Loader2,
   Search, ChevronLeft, ChevronRight, ImageIcon, AlertTriangle
@@ -99,9 +99,27 @@ function normalizeProduct(p) {
 function ProductModal({ product, onClose, onSave }) {
   const [form, setForm] = useState(() => normalizeProduct(product));
   const [saving, setSaving] = useState(false);
+  const [idsTouched, setIdsTouched] = useState(!!product?._id);
   const isEdit = !!product?._id;
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // New listings: auto-fill slug + SKU from the name so you only type it once.
+  // Stops as soon as you manually edit either field.
+  const handleNameChange = (name) => {
+    setForm(f => {
+      const next = { ...f, name };
+      if (!isEdit && !idsTouched) {
+        const base = name.toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .slice(0, 48);
+        next.slug = base ? `rfx-${base}` : '';
+        next.sku = base ? `RFX-${base.toUpperCase().replace(/-/g, '-').slice(0, 24)}` : '';
+      }
+      return next;
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -149,87 +167,10 @@ function ProductModal({ product, onClose, onSave }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Images */}
-          <div>
-            <label className="admin-label">Images</label>
-            <ImageUploader
-              images={form.images || []}
-              onChange={imgs => setField('images', imgs)}
-            />
-          </div>
-
-          {/* Basic info */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="admin-label">Slug *</label>
-              <input className="input" value={form.slug} onChange={e => setField('slug', e.target.value)} required placeholder="rfx-d4-16-3200" />
-            </div>
-            <div>
-              <label className="admin-label">SKU *</label>
-              <input className="input" value={form.sku} onChange={e => setField('sku', e.target.value)} required placeholder="RFX-D4-16-3200" />
-            </div>
-          </div>
-
+          {/* ── Essentials — what you touch on every listing ─────────────── */}
           <div>
             <label className="admin-label">Product name *</label>
-            <input className="input" value={form.name} onChange={e => setField('name', e.target.value)} required />
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="admin-label">Line</label>
-              <input className="input" value={form.line} onChange={e => setField('line', e.target.value)} />
-            </div>
-            <div>
-              <label className="admin-label">Generation</label>
-              <select className="input" value={form.generation} onChange={e => setField('generation', e.target.value)}>
-                <option>DDR4</option>
-                <option>DDR5</option>
-              </select>
-            </div>
-            <div>
-              <label className="admin-label">Form factor</label>
-              <select className="input" value={form.formFactor} onChange={e => setField('formFactor', e.target.value)}>
-                <option>UDIMM</option>
-                <option>SO-DIMM</option>
-                <option>RDIMM</option>
-                <option>LRDIMM</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-3">
-            <div>
-              <label className="admin-label">Capacity (GB)</label>
-              <input type="number" className="input" value={form.capacity} onChange={e => setField('capacity', e.target.value)} />
-            </div>
-            <div>
-              <label className="admin-label">Capacity label</label>
-              <input className="input" value={form.capacityLabel} onChange={e => setField('capacityLabel', e.target.value)} placeholder="16GB" />
-            </div>
-            <div>
-              <label className="admin-label">Speed (MT/s)</label>
-              <input type="number" className="input" value={form.speed} onChange={e => setField('speed', e.target.value)} />
-            </div>
-            <div>
-              <label className="admin-label">Speed label</label>
-              <input className="input" value={form.speedLabel} onChange={e => setField('speedLabel', e.target.value)} placeholder="3200 MT/s" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="admin-label">CAS</label>
-              <input className="input" value={form.cas} onChange={e => setField('cas', e.target.value)} placeholder="CL16" />
-            </div>
-            <div>
-              <label className="admin-label">Timings</label>
-              <input className="input" value={form.timings} onChange={e => setField('timings', e.target.value)} placeholder="16-18-18-38" />
-            </div>
-            <div>
-              <label className="admin-label">Voltage</label>
-              <input className="input" value={form.voltage} onChange={e => setField('voltage', e.target.value)} placeholder="1.35V" />
-            </div>
+            <input className="input" value={form.name} onChange={e => handleNameChange(e.target.value)} required placeholder="32GB (2x16GB) DDR5-6000 CL30 EXPO Kit" />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -239,7 +180,7 @@ function ProductModal({ product, onClose, onSave }) {
             </div>
             <div>
               <label className="admin-label">Compare at ($)</label>
-              <input type="number" step="0.01" className="input" value={form.compareAt || ''} onChange={e => setField('compareAt', e.target.value)} />
+              <input type="number" step="0.01" className="input" value={form.compareAt || ''} onChange={e => setField('compareAt', e.target.value)} placeholder="Optional" />
             </div>
             <div>
               <label className="admin-label">Stock qty *</label>
@@ -247,46 +188,134 @@ function ProductModal({ product, onClose, onSave }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="admin-label">Condition</label>
-              <input className="input" value={form.condition} onChange={e => setField('condition', e.target.value)} />
-            </div>
-            <div>
-              <label className="admin-label">Warranty</label>
-              <input className="input" value={form.warranty} onChange={e => setField('warranty', e.target.value)} />
-            </div>
-          </div>
-
           <div>
-            <label className="admin-label">Tags (comma-separated)</label>
-            <input className="input" value={Array.isArray(form.tags) ? form.tags.join(', ') : form.tags} onChange={e => setField('tags', e.target.value)} placeholder="DDR4, Desktop, XMP" />
+            <label className="admin-label">Images</label>
+            <ImageUploader
+              images={form.images || []}
+              onChange={imgs => setField('images', imgs)}
+            />
           </div>
 
           <div>
             <label className="admin-label">Description</label>
-            <textarea className="input min-h-[80px]" value={form.description || ''} onChange={e => setField('description', e.target.value)} placeholder="Product description shown on the listing page..." />
-          </div>
-
-          <div>
-            <label className="admin-label">Compatibility (one per line)</label>
-            <textarea className="input min-h-[60px]" value={Array.isArray(form.compatibility) ? form.compatibility.join('\n') : form.compatibility} onChange={e => setField('compatibility', e.target.value)} />
+            <textarea className="input min-h-[80px]" value={form.description || ''} onChange={e => setField('description', e.target.value)} placeholder="Shown on the listing page" />
           </div>
 
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-[13px] cursor-pointer">
-              <input type="checkbox" checked={form.isFeatured} onChange={e => setField('isFeatured', e.target.checked)} />
-              Featured
-            </label>
-            <label className="flex items-center gap-2 text-[13px] cursor-pointer">
-              <input type="checkbox" checked={form.ecc} onChange={e => setField('ecc', e.target.checked)} />
-              ECC
-            </label>
-            <label className="flex items-center gap-2 text-[13px] cursor-pointer">
               <input type="checkbox" checked={form.isActive !== false} onChange={e => setField('isActive', e.target.checked)} />
-              Active
+              Active (visible in store)
+            </label>
+            <label className="flex items-center gap-2 text-[13px] cursor-pointer">
+              <input type="checkbox" checked={form.isFeatured} onChange={e => setField('isFeatured', e.target.checked)} />
+              Featured on homepage
             </label>
           </div>
+
+          {/* ── IDs — auto-filled from the name, editable if needed ───────── */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="admin-label">Slug *</label>
+              <input className="input" value={form.slug} onChange={e => { setIdsTouched(true); setField('slug', e.target.value); }} required placeholder="auto-filled from name" />
+            </div>
+            <div>
+              <label className="admin-label">SKU *</label>
+              <input className="input" value={form.sku} onChange={e => { setIdsTouched(true); setField('sku', e.target.value); }} required placeholder="auto-filled from name" />
+            </div>
+          </div>
+
+          {/* ── Specs — collapsed by default, open when you need them ─────── */}
+          <details className="group rounded-xl border border-white/10">
+            <summary className="cursor-pointer select-none px-4 py-3 text-[13px] text-neutral-300 hover:text-white flex items-center justify-between">
+              Memory specs & details
+              <span className="text-neutral-600 text-[11px] group-open:hidden">Show</span>
+              <span className="text-neutral-600 text-[11px] hidden group-open:inline">Hide</span>
+            </summary>
+            <div className="px-4 pb-4 space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="admin-label">Line</label>
+                  <input className="input" value={form.line} onChange={e => setField('line', e.target.value)} />
+                </div>
+                <div>
+                  <label className="admin-label">Generation</label>
+                  <select className="input" value={form.generation} onChange={e => setField('generation', e.target.value)}>
+                    <option>DDR4</option>
+                    <option>DDR5</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="admin-label">Form factor</label>
+                  <select className="input" value={form.formFactor} onChange={e => setField('formFactor', e.target.value)}>
+                    <option>UDIMM</option>
+                    <option>SO-DIMM</option>
+                    <option>RDIMM</option>
+                    <option>LRDIMM</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3">
+                <div>
+                  <label className="admin-label">Capacity (GB)</label>
+                  <input type="number" className="input" value={form.capacity} onChange={e => setField('capacity', e.target.value)} />
+                </div>
+                <div>
+                  <label className="admin-label">Capacity label</label>
+                  <input className="input" value={form.capacityLabel} onChange={e => setField('capacityLabel', e.target.value)} placeholder="16GB" />
+                </div>
+                <div>
+                  <label className="admin-label">Speed (MT/s)</label>
+                  <input type="number" className="input" value={form.speed} onChange={e => setField('speed', e.target.value)} />
+                </div>
+                <div>
+                  <label className="admin-label">Speed label</label>
+                  <input className="input" value={form.speedLabel} onChange={e => setField('speedLabel', e.target.value)} placeholder="3200 MT/s" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="admin-label">CAS</label>
+                  <input className="input" value={form.cas} onChange={e => setField('cas', e.target.value)} placeholder="CL16" />
+                </div>
+                <div>
+                  <label className="admin-label">Timings</label>
+                  <input className="input" value={form.timings} onChange={e => setField('timings', e.target.value)} placeholder="16-18-18-38" />
+                </div>
+                <div>
+                  <label className="admin-label">Voltage</label>
+                  <input className="input" value={form.voltage} onChange={e => setField('voltage', e.target.value)} placeholder="1.35V" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="admin-label">Condition</label>
+                  <input className="input" value={form.condition} onChange={e => setField('condition', e.target.value)} />
+                </div>
+                <div>
+                  <label className="admin-label">Warranty</label>
+                  <input className="input" value={form.warranty} onChange={e => setField('warranty', e.target.value)} />
+                </div>
+              </div>
+
+              <div>
+                <label className="admin-label">Tags (comma-separated)</label>
+                <input className="input" value={Array.isArray(form.tags) ? form.tags.join(', ') : form.tags} onChange={e => setField('tags', e.target.value)} placeholder="DDR4, Desktop, XMP" />
+              </div>
+
+              <div>
+                <label className="admin-label">Compatibility (one per line)</label>
+                <textarea className="input min-h-[60px]" value={Array.isArray(form.compatibility) ? form.compatibility.join('\n') : form.compatibility} onChange={e => setField('compatibility', e.target.value)} />
+              </div>
+
+              <label className="flex items-center gap-2 text-[13px] cursor-pointer">
+                <input type="checkbox" checked={form.ecc} onChange={e => setField('ecc', e.target.checked)} />
+                ECC memory
+              </label>
+            </div>
+          </details>
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
@@ -310,7 +339,17 @@ export default function AdminProducts() {
   const [modalProduct, setModalProduct] = useState(null); // null = closed, {} = new, {...} = edit
   const [modalOpen, setModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const navigate = useNavigate();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Quick action: /admin/products?new=1 opens the Add modal directly
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setModalProduct({});
+      setModalOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   const load = (p = page, q = search) => {
     setLoading(true);
@@ -456,7 +495,7 @@ export default function AdminProducts() {
                             <ChevronRight size={13} />
                           </Link>
                           <button
-                            onClick={() => navigate(`/admin/products/edit/${p._id}`)}
+                            onClick={() => { setModalProduct(p); setModalOpen(true); }}
                             className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
                             title="Edit product"
                           >

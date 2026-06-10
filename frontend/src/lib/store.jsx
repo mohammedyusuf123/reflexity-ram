@@ -39,21 +39,6 @@ export const useSavedForLater = create(
   ),
 );
 
-// ─── Restock Alerts (local) ───────────────────────────────────────────────────
-export const useRestockAlerts = create(
-  persist(
-    (set, get) => ({
-      alerts: [],
-      subscribe: (slug, email) => {
-        if (get().alerts.some((a) => a.slug === slug && a.email === email)) return false;
-        set({ alerts: [...get().alerts, { slug, email, ts: new Date().toISOString() }] });
-        return true;
-      },
-    }),
-    { name: 'reflexity-restock' },
-  ),
-);
-
 // Legacy useCart — wraps cartStore for backward compat with existing components
 // New code should import useCartStore directly
 import useCartStore from './cartStore';

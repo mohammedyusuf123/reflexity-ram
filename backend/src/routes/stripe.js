@@ -5,18 +5,26 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { optionalAuth } = require('../middleware/auth');
 const { sendOrderConfirmationEmail } = require('../utils/email');
+const { getShippingOption } = require('../config/shipping');
+const { decrementStockForOrder, restoreStockForOrder } = require('../utils/stock');
 
 const router = express.Router();
 
 // ─── POST /api/stripe/create-payment-intent ────────────────────────────────────
 router.post('/create-payment-intent', optionalAuth, async (req, res) => {
   try {
-    const { shippingCost = 0, shippingMethod } = req.body;
+    const { shippingMethod } = req.body; // option ID — price comes from server table
     const sessionId = req.headers['x-session-id'] || req.cookies?.cartSessionId;
     const userId = req.user?._id;
 
     if (!userId && !sessionId) {
       return res.status(400).json({ error: 'Session ID required for guest checkout' });
+    }
+
+    // SECURITY: never trust a client-supplied shipping cost.
+    const shippingOption = getShippingOption(shippingMethod);
+    if (!shippingOption) {
+      return res.status(400).json({ error: 'Invalid shipping method' });
     }
 
     const filter = userId ? { user: userId } : { sessionId };
@@ -26,8 +34,18 @@ router.post('/create-payment-intent', optionalAuth, async (req, res) => {
       return res.status(400).json({ error: 'Cart is empty' });
     }
 
-    const subtotal = cart.items.reduce((sum, i) => sum + i.price * i.qty, 0);
-    const shippingCostNum = Number(shippingCost);
+    // Recompute prices from the products collection so a stale cart price
+    // can't undercharge (cart prices are refreshed on GET, but not guaranteed here).
+    let subtotal = 0;
+    for (const item of cart.items) {
+      const product = await Product.findOne({ slug: item.slug, isActive: true });
+      if (!product) {
+        return res.status(400).json({ error: `Product "${item.name}" is no longer available` });
+      }
+      subtotal += product.price * item.qty;
+    }
+
+    const shippingCostNum = shippingOption.price;
     const total = subtotal + shippingCostNum;
     const amountInCents = Math.round(total * 100);
 
@@ -42,7 +60,7 @@ router.post('/create-payment-intent', optionalAuth, async (req, res) => {
       metadata: {
         userId: userId ? userId.toString() : 'guest',
         sessionId: sessionId || '',
-        shippingMethod: shippingMethod || '',
+        shippingMethod: shippingOption.id,
         itemCount: cart.items.reduce((s, i) => s + i.qty, 0).toString(),
       },
     };
@@ -91,12 +109,14 @@ router.post('/webhook', async (req, res) => {
   try {
     switch (event.type) {
 
-      // ── Payment succeeded: mark order paid, send confirmation email ──────────
+      // ── Payment succeeded: mark order paid, decrement stock, send email ──────
       case 'payment_intent.succeeded': {
         const pi = event.data.object;
 
+        // Idempotent: only transition orders that aren't already paid
+        // (the order-create route may have marked it paid synchronously).
         const order = await Order.findOneAndUpdate(
-          { stripePaymentIntentId: pi.id },
+          { stripePaymentIntentId: pi.id, paymentStatus: { $ne: 'paid' } },
           {
             paymentStatus: 'paid',
             status: 'processing',
@@ -115,6 +135,10 @@ router.post('/webhook', async (req, res) => {
 
         if (order) {
           console.log(`✅ Payment succeeded for order ${order.orderNumber} (PI: ${pi.id})`);
+
+          // Stock is decremented exactly once per order (guarded flag),
+          // whether this webhook or the order-create route gets there first.
+          await decrementStockForOrder(order);
 
           // Send order confirmation email now that payment is confirmed
           const emailAddress = order.user?.email || order.guestEmail;
@@ -164,13 +188,10 @@ router.post('/webhook', async (req, res) => {
         );
 
         if (order) {
-          console.log(`❌ Payment failed for order ${order.orderNumber} (PI: ${pi.id}) — restoring stock`);
-          // Restore stock for each item
-          for (const item of order.items) {
-            await Product.findByIdAndUpdate(item.product, {
-              $inc: { stockQuantity: item.qty },
-            });
-          }
+          console.log(`❌ Payment failed for order ${order.orderNumber} (PI: ${pi.id})`);
+          // Restore stock only if this order actually decremented it
+          // (stock is now only taken on confirmed payment, so usually a no-op).
+          await restoreStockForOrder(order);
         } else {
           console.warn(`⚠️  No order found for failed PI: ${pi.id}`);
         }

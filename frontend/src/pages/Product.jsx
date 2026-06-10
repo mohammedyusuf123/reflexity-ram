@@ -19,7 +19,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ImageModal from "@/components/ImageModal";
 import ProductCard from "@/components/ProductCard";
-import RestockSignup from "@/components/RestockSignup";
 import EmptyState from "@/components/EmptyState";
 import { useCart, useRecentlyViewed } from "@/lib/store";
 import useAuthStore from "@/lib/authStore";
@@ -332,12 +331,6 @@ export default function Product() {
                   Buy now
                 </button>
               </div>
-
-              {p.stock !== "in" && (
-                <div className="mb-5" data-testid="product-restock-wrapper">
-                  <RestockSignup slug={p.slug} sku={p.sku} />
-                </div>
-              )}
 
               {/* Trust strip */}
               <div className="grid sm:grid-cols-2 gap-3 mb-6">

@@ -7,6 +7,8 @@ const Product = require('../models/Product');
 const { validate } = require('../middleware/validate');
 const { authenticate, optionalAuth } = require('../middleware/auth');
 const { sendOrderConfirmationEmail } = require('../utils/email');
+const { getShippingOption } = require('../config/shipping');
+const { decrementStockForOrder } = require('../utils/stock');
 
 const router = express.Router();
 
@@ -122,12 +124,17 @@ router.post(
       const {
         shippingAddress,
         billingAddress,
-        shippingMethod,
-        shippingCost = 0,
+        shippingMethod, // option ID (e.g. 'standard') — price is looked up server-side
         stripePaymentIntentId,
         guestEmail,
         notes,
       } = req.body;
+
+      // ── SECURITY: shipping cost comes from the server-side table, never the client ──
+      const shippingOption = getShippingOption(shippingMethod);
+      if (!shippingOption) {
+        return res.status(400).json({ error: 'Invalid shipping method' });
+      }
 
       const sessionId = req.headers['x-session-id'] || req.cookies?.cartSessionId;
       const userId = req.user?._id;
@@ -171,10 +178,12 @@ router.post(
         if (!product) {
           return res.status(400).json({ error: `Product "${item.name}" is no longer available` });
         }
-        if (product.stock === 'out') {
+        // Check actual quantity — the old `stockQuantity > 0 &&` guard let
+        // qty pass unchecked whenever stockQuantity was exactly 0.
+        if (product.stockQuantity <= 0 || product.stock === 'out') {
           return res.status(400).json({ error: `"${product.name}" is out of stock` });
         }
-        if (product.stockQuantity > 0 && item.qty > product.stockQuantity) {
+        if (item.qty > product.stockQuantity) {
           return res.status(400).json({
             error: `Only ${product.stockQuantity} units of "${product.name}" available`,
           });
@@ -191,7 +200,7 @@ router.post(
       }
 
       const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.qty, 0);
-      const shippingCostNum = Number(shippingCost);
+      const shippingCostNum = shippingOption.price;
       const total = subtotal + shippingCostNum;
 
       // ── CRITICAL: Verify the PI amount matches our computed total ─────────────
@@ -207,41 +216,63 @@ router.post(
         });
       }
 
-      // ── Create order — ALWAYS starts as pending ───────────────────────────────
-      // paymentStatus is set to 'paid' ONLY by the Stripe webhook, never here.
-      const order = await Order.create({
-        user: userId || undefined,
-        guestEmail: !userId ? (guestEmail || '').toLowerCase().trim() : undefined,
-        items: orderItems,
-        shippingAddress,
-        billingAddress: billingAddress || shippingAddress,
-        shippingMethod,
-        shippingCost: shippingCostNum,
-        subtotal,
-        total,
-        stripePaymentIntentId,
-        paymentStatus: 'pending',  // ← NEVER set to 'paid' here. Webhook does this.
-        status: 'pending',
-        statusHistory: [{ status: 'pending', note: 'Order placed — awaiting payment confirmation' }],
-        notes,
-      });
+      // ── Create order ───────────────────────────────────────────────────────────
+      // If Stripe already reports the PI as succeeded (we retrieved it above,
+      // server-side, so this is trustworthy), mark the order paid immediately.
+      // This closes the race where the webhook fires before the order exists.
+      // Otherwise the order starts 'pending' and the webhook flips it to paid.
+      const alreadyPaid = paymentIntent.status === 'succeeded';
 
-      // ── Decrement stock (reserved on order creation) ──────────────────────────
-      // NOTE: If payment ultimately fails (webhook: payment_intent.payment_failed),
-      // stock should be restored. The webhook handler does this.
-      for (const item of orderItems) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stockQuantity: -item.qty },
+      let order;
+      try {
+        order = await Order.create({
+          user: userId || undefined,
+          guestEmail: !userId ? (guestEmail || '').toLowerCase().trim() : undefined,
+          items: orderItems,
+          shippingAddress,
+          billingAddress: billingAddress || shippingAddress,
+          shippingMethod: shippingOption.label,
+          shippingCost: shippingCostNum,
+          subtotal,
+          total,
+          stripePaymentIntentId,
+          stripeChargeId: alreadyPaid ? paymentIntent.latest_charge || undefined : undefined,
+          paymentStatus: alreadyPaid ? 'paid' : 'pending',
+          status: alreadyPaid ? 'processing' : 'pending',
+          statusHistory: [
+            alreadyPaid
+              ? { status: 'processing', note: 'Payment confirmed by Stripe at order creation' }
+              : { status: 'pending', note: 'Order placed — awaiting payment confirmation' },
+          ],
+          notes,
         });
+      } catch (createErr) {
+        // Unique index on stripePaymentIntentId — duplicate submission lost the race
+        if (createErr.code === 11000) {
+          const existing = await Order.findOne({ stripePaymentIntentId });
+          return res.status(409).json({
+            error: 'This payment has already been processed.',
+            orderNumber: existing?.orderNumber,
+          });
+        }
+        throw createErr;
+      }
+
+      // ── Decrement stock ONLY once payment is confirmed ─────────────────────────
+      // (idempotent — the webhook calls the same helper and whichever runs first wins)
+      if (alreadyPaid) {
+        await decrementStockForOrder(order);
       }
 
       // ── Clear cart ────────────────────────────────────────────────────────────
       await Cart.findOneAndUpdate(filter, { items: [], discount: 0, couponCode: undefined });
 
       // ── Send confirmation email (non-blocking) ────────────────────────────────
+      // Only when payment is already confirmed — otherwise the webhook sends it
+      // on payment_intent.succeeded, and sending both would double-email.
       const emailAddress = userId ? req.user.email : guestEmail;
       const firstName = userId ? req.user.firstName : shippingAddress.firstName;
-      if (emailAddress) {
+      if (alreadyPaid && emailAddress) {
         try {
           await sendOrderConfirmationEmail({
             email: emailAddress,

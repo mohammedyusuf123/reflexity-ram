@@ -18,7 +18,12 @@ router.post('/', async (req, res) => {
 
   try {
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@reflexityram.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'ReflexityAdmin2026!';
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    // SECURITY: never ship a default admin password in source code.
+    // The seed refuses to create/reset the admin unless ADMIN_PASSWORD is set.
+    if (!adminPassword || adminPassword.length < 12) {
+      results.errors.push('Admin: ADMIN_PASSWORD env var must be set (12+ chars) to seed the admin user');
+    } else {
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (!existingAdmin) {
       const admin = new User({ firstName: 'Admin', lastName: 'User', email: adminEmail, password: adminPassword, role: 'admin', isEmailVerified: true });
@@ -31,6 +36,7 @@ router.post('/', async (req, res) => {
       existingAdmin.password = adminPassword;
       await existingAdmin.save();
       results.admin = `Updated: ${adminEmail}`;
+    }
     }
   } catch (err) {
     results.errors.push(`Admin: ${err.message}`);

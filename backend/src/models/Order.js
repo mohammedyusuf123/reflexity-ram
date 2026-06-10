@@ -58,6 +58,8 @@ const orderSchema = new mongoose.Schema({
   tax: { type: Number, default: 0 },
   discount: { type: Number, default: 0 },
   total: { type: Number, required: true },
+  // Guard flag: stock is decremented exactly once per order (see utils/stock.js)
+  stockDecremented: { type: Boolean, default: false },
   shippingMethod: { type: String },
   trackingNumber: { type: String },
   trackingUrl: { type: String },
@@ -79,13 +81,21 @@ const orderSchema = new mongoose.Schema({
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ status: 1 });
-orderSchema.index({ stripePaymentIntentId: 1 });
+// UNIQUE: the DB enforces one order per PaymentIntent even if the app-level
+// duplicate check races (two simultaneous submissions of the same PI).
+// sparse: allows legacy/manual orders without a PI.
+orderSchema.index({ stripePaymentIntentId: 1 }, { unique: true, sparse: true });
 
-// Generate order number before saving
-orderSchema.pre('save', function () {
+// Generate order number before validation (required:true is checked during
+// validation, which runs BEFORE pre('save') hooks — so this must be
+// pre('validate'), not pre('save')). Uses crypto randomness: 6 random chars
+// (~2.1 billion combinations) on top of a ms timestamp, so collisions are
+// practically impossible even under concurrent checkouts.
+const crypto = require('crypto');
+orderSchema.pre('validate', function () {
   if (!this.orderNumber) {
     const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substr(2, 4).toUpperCase();
+    const random = crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
     this.orderNumber = `RFX-${timestamp}-${random}`;
   }
 });

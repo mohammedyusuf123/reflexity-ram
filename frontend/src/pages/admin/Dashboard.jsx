@@ -42,9 +42,16 @@ export default function Dashboard() {
   return (
     <AdminLayout>
       <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-neutral-500 text-[13px] mt-1">Reflexity RAM admin overview</p>
+        <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-neutral-500 text-[13px] mt-1">Reflexity RAM admin overview</p>
+          </div>
+          {/* Quick actions — the two things you do most, one click from anywhere */}
+          <div className="flex gap-2">
+            <Link to="/admin/products?new=1" className="btn-primary text-[13px]">+ Add product</Link>
+            <Link to="/admin/orders" className="btn-secondary text-[13px]">View orders</Link>
+          </div>
         </div>
 
         {loading ? (

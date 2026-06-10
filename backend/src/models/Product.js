@@ -45,6 +45,15 @@ const productSchema = new mongoose.Schema({
   },
   capacity: { type: Number, required: true }, // in GB
   capacityLabel: { type: String, required: true }, // e.g. "32GB"
+  // ── Stripe sync ──────────────────────────────────────────────────────────────
+  // Each product maps to a Stripe Product + active Price. Checkout Sessions are
+  // built from these Price IDs. Synced automatically on admin create/update
+  // (see utils/stripeSync.js); prices are immutable in Stripe, so a price change
+  // creates a new Price and archives the old one.
+  stripeProductId: { type: String },
+  stripePriceId: { type: String },
+  // Price the active Stripe Price was created at — lets us detect drift
+  stripePriceAmount: { type: Number },
   kit: { type: String }, // e.g. "2 x 16GB"
   speed: { type: Number, required: true }, // in MT/s
   speedLabel: { type: String, required: true },

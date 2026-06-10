@@ -22,7 +22,10 @@ export default function OrderSuccess() {
 
   useEffect(() => {
     if (!orderNumber) return;
-    ordersApi.getByNumber(orderNumber)
+    // Guest orders require the matching email (?email=...) — CheckoutReturn
+    // passes it through after verifying the Stripe session server-side.
+    const guestEmail = new URLSearchParams(window.location.search).get('email') || undefined;
+    ordersApi.getByNumber(orderNumber, guestEmail)
       .then(({ data }) => setOrder(data.order))
       .catch(() => setError('Order not found'))
       .finally(() => setLoading(false));

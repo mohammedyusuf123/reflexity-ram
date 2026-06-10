@@ -8,6 +8,7 @@ const Cart = require('../models/Cart');
 const { validate } = require('../middleware/validate');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { sendShippingNotificationEmail } = require('../utils/email');
+const { ensureStripePrice, syncStripeProductDetails } = require('../utils/stripeSync');
 
 const router = express.Router();
 
@@ -167,6 +168,15 @@ router.post(
       }
 
       const product = await Product.create(data);
+
+      // Sync to Stripe (Product + Price). Non-fatal: if Stripe is down or not
+      // configured, the product still saves and sync retries lazily at checkout.
+      try {
+        await ensureStripePrice(product);
+      } catch (stripeErr) {
+        console.warn(`Stripe sync failed for new product ${product.slug}:`, stripeErr.message);
+      }
+
       res.status(201).json({ product });
     } catch (err) {
       if (err.code === 11000) {
@@ -214,6 +224,16 @@ router.patch(
         { new: true, runValidators: true }
       );
       if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      // Re-sync Stripe: price changes create a new Price (prices are immutable),
+      // name/description/image changes update the Stripe Product. Non-fatal.
+      try {
+        await ensureStripePrice(product);
+        await syncStripeProductDetails(product);
+      } catch (stripeErr) {
+        console.warn(`Stripe sync failed for ${product.slug}:`, stripeErr.message);
+      }
+
       res.json({ product });
     } catch (err) {
       console.error('Update product error:', err);
@@ -481,10 +501,6 @@ router.delete(
       const user = await User.findById(req.params.id);
       if (!user) return res.status(404).json({ error: 'User not found' });
 
-      // SECURITY: Prevent deleting other admins unless you are a super admin? 
-      // For now, any admin can delete customers, but maybe not other admins.
-      // Let's stick to simple: admin can delete any account except their own.
-      
       await User.findByIdAndDelete(req.params.id);
       
       // Cleanup: Delete user's cart

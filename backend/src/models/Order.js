@@ -52,6 +52,7 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: { type: String, default: 'stripe' },
   stripePaymentIntentId: { type: String },
+  stripeCheckoutSessionId: { type: String },
   stripeChargeId: { type: String },
   subtotal: { type: Number, required: true },
   shippingCost: { type: Number, default: 0 },
@@ -85,6 +86,11 @@ orderSchema.index({ status: 1 });
 // duplicate check races (two simultaneous submissions of the same PI).
 // sparse: allows legacy/manual orders without a PI.
 orderSchema.index({ stripePaymentIntentId: 1 }, { unique: true, sparse: true });
+// UNIQUE: one order per Checkout Session — this is the duplicate-fulfillment
+// guard. Both the webhook and the success-page fallback try to create the
+// order; whichever loses the race gets a duplicate-key error and reuses the
+// existing order instead.
+orderSchema.index({ stripeCheckoutSessionId: 1 }, { unique: true, sparse: true });
 
 // Generate order number before validation (required:true is checked during
 // validation, which runs BEFORE pre('save') hooks — so this must be

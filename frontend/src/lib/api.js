@@ -99,7 +99,10 @@ export const ordersApi = {
 
 // ─── Stripe API ───────────────────────────────────────────────────────────────
 export const stripeApi = {
-  createPaymentIntent: (data) => api.post('/stripe/create-payment-intent', data),
+  createPaymentIntent: (data) => api.post('/stripe/create-payment-intent', data), // legacy
+  createCheckoutSession: () => api.post('/stripe/create-checkout-session'),
+  sessionStatus: (sessionId) =>
+    api.get('/stripe/session-status', { params: { session_id: sessionId } }),
 };
 
 // ─── Admin API ────────────────────────────────────────────────────────────────

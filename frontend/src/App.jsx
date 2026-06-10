@@ -14,6 +14,7 @@ import Product from "@/pages/Product";
 import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
 import OrderSuccess from "@/pages/OrderSuccess";
+import CheckoutReturn from "@/pages/CheckoutReturn";
 import Account from "@/pages/Account";
 import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/shop/:slug" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order/success" element={<CheckoutReturn />} />
           <Route path="/order/:orderNumber" element={<OrderSuccess />} />
           <Route path="/account" element={<Account />} />
           <Route path="/reset-password" element={<ResetPassword />} />

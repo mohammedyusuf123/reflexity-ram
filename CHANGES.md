@@ -1,5 +1,23 @@
 # Reflexity RAM — Fix Changelog (June 2026)
 
+## ✨ NEW: Stripe Checkout Sessions (replaces custom Payment Element checkout)
+
+**How it works now:** Cart (add items / adjust quantities) → `/checkout` order review → `POST /api/stripe/create-checkout-session` → redirect to Stripe-hosted checkout → Stripe collects address/phone/email and applies tax → customer returns to `/order/success?session_id=...` → order is fulfilled exactly once.
+
+- **Stripe Price IDs in the DB**: Product model has `stripeProductId` / `stripePriceId` / `stripePriceAmount`. Synced automatically on admin create/update (`utils/stripeSync.js`); price changes create a new Stripe Price and archive the old (prices are immutable). Lazy re-sync at checkout if anything is missing. Line items are always `{ price: <id>, quantity }` — never ad-hoc amounts.
+- **CA/US only**: `shipping_address_collection.allowed_countries: ['CA','US']`. Stripe's hosted page renders the country-correct address form automatically (Province + Postal code for Canada, State + ZIP for the US) — no custom form code. Phone collection enabled.
+- **Stripe Tax**: `automatic_tax: enabled`. Canadian provincial tax (Ontario HST, Alberta GST, etc.) calculated from the shipping address. US orders: $0 tax while no US registrations exist; to enable later, add state registrations in the Stripe dashboard — zero code changes.
+- **Webhooks & duplicate-proof fulfillment**: `checkout.session.completed` / `async_payment_succeeded` call `fulfillCheckoutSession()`, which is also called by the success page (`GET /api/stripe/session-status`) as a fallback if the webhook is delayed. A **unique index on `stripeCheckoutSessionId`** guarantees exactly one order per session no matter how many times either path fires. Stock decrement + cart clear + confirmation email run once, post-payment only.
+- Frontend: `Checkout.jsx` rewritten as a slim order review + hand-off (custom address form and `@stripe/react-stripe-js` flow removed); new `CheckoutReturn.jsx` at `/order/success` polls the session, then redirects to the existing order confirmation page (guest email passed through for authorization).
+- Legacy Payment Intent endpoints kept but unused.
+
+### ⚙️ Stripe dashboard setup required (owner)
+1. **Stripe Tax**: activate Stripe Tax, set business address (Ontario), add your **Canada tax registration** (GST/HST number). Optionally set a default product tax category (e.g. general tangible goods).
+2. **Webhook endpoint** → `https://<backend>/api/stripe/webhook`, events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`. Put the signing secret in `STRIPE_WEBHOOK_SECRET`.
+3. Optional: `STRIPE_CURRENCY=cad` env var to charge in CAD (default is `usd`).
+4. After deploying, open and re-save each product once in the admin (or edit anything) to trigger the initial Stripe Product/Price sync — or just let the lazy sync handle it on first checkout.
+
+
 Apply this entire repo state to `main`. Summary of every change and why.
 
 ## 🔴 SECURITY — ACTION REQUIRED BY OWNER (not just code)

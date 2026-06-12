@@ -1,5 +1,22 @@
 # Reflexity RAM — Fix Changelog (June 2026)
 
+## 🔧 UPDATE: One unified sidebar (no more user vs admin split)
+
+### The change
+- **New `AppLayout`** component replaces `AdminLayout`. Same component renders the left sidebar for both `/account` and every `/admin/*` page — there are no longer two parallel navigation systems.
+- **Role-aware sidebar**: one nav, filtered by role. Each user sees "Orders" exactly once.
+  - **As admin (Yusuf)**: Profile · Security · Settings · ── Admin ── · Products · Orders · Users
+  - **As customer**: Profile · Orders · Security · Settings
+- **Header dropdown simplified**: email · name · single link ("Open admin panel" if admin, "Open settings" if customer) → goes to `/account` · Sign out. The old Account / Orders / Admin Dashboard buttons in the dropdown are gone — they were the redundant entry points.
+- **`/admin` no longer renders a standalone Dashboard page** — it redirects to `/admin/products`. The admin Dashboard page (`pages/admin/Dashboard.jsx`) was removed; if you want it back as an extra sidebar item later it's easy to restore.
+- **Sign out is in both places** — the sidebar footer and the header dropdown — because it's needed from anywhere.
+
+### What this fixes
+- The previous structure had two layouts (`AdminLayout` + Account.jsx's own grid) which is why Orders showed in both nav systems. Now there's one layout component.
+- No URL changes required — `/account?tab=...` and `/admin/products` etc. all still work; they just render inside the same shell.
+
+
+
 ## 🔧 UPDATE: Header dropdown order + listing form back to single-column
 
 ### Header dropdown

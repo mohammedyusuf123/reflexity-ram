@@ -6,7 +6,7 @@ import {
   ClipboardPaste
 } from 'lucide-react';
 import { toast } from 'sonner';
-import AdminLayout from '@/components/AdminLayout';
+import AppLayout from '@/components/AppLayout';
 import { adminApi } from '@/lib/api';
 import { parseRamTemplate } from '@/lib/ramTemplate';
 
@@ -478,7 +478,7 @@ export default function AdminProducts() {
   };
 
   return (
-    <AdminLayout>
+    <AppLayout requireAdmin>
       <div className="p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -640,6 +640,6 @@ export default function AdminProducts() {
           onSave={handleSave}
         />
       )}
-    </AdminLayout>
+    </AppLayout>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Shield, Lock, Key, AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import AdminLayout from '@/components/AdminLayout';
+import AppLayout from '@/components/AppLayout';
 import { authApi } from '@/lib/api';
 
 export default function Security() {
@@ -27,7 +27,7 @@ export default function Security() {
   };
 
   return (
-    <AdminLayout>
+    <AppLayout requireAdmin>
       <div className="p-8 max-w-2xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight">Security</h1>
@@ -88,7 +88,7 @@ export default function Security() {
           </ul>
         </div>
       </div>
-    </AdminLayout>
+    </AppLayout>
   );
 }
 

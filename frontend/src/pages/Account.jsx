@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { User, Package, Shield, Settings, LogOut, Inbox, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Inbox, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import AppLayout from '@/components/AppLayout';
 import AuthModal from '@/components/AuthModal';
 import EmptyState from '@/components/EmptyState';
 import useAuthStore from '@/lib/authStore';
@@ -101,10 +100,10 @@ export default function Account() {
 
   return (
     <>
-      <Header />
-      <main className="container-tight pt-28 pb-20 min-h-screen" data-testid="account-page">
+    <AppLayout>
+      <div className="p-8 max-w-4xl" data-testid="account-page">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Account</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Account</h1>
           {user && (
             <p className="text-neutral-400 text-[14px] mt-1">
               {user.firstName} {user.lastName} · {user.email}
@@ -143,42 +142,7 @@ export default function Account() {
             </button>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-[220px_1fr] gap-8">
-            {/* Sidebar */}
-            <nav className="flex flex-col gap-1" data-testid="account-sidebar">
-              {[
-                { id: 'profile', label: 'Profile', icon: User },
-                { id: 'orders', label: 'Orders', icon: Package },
-                { id: 'security', label: 'Security', icon: Shield },
-                { id: 'settings', label: 'Settings', icon: Settings },
-              ].map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setTab(id)}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13.5px] text-left transition-all ${
-                    tab === id
-                      ? 'bg-white/6 text-white border border-white/10'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/4'
-                  }`}
-                  data-testid={`account-tab-${id}`}
-                >
-                  <Icon size={15} />
-                  {label}
-                </button>
-              ))}
-              <div className="border-t border-white/5 mt-2 pt-2">
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13.5px] text-neutral-400 hover:text-red-400 hover:bg-red-500/5 transition-all w-full"
-                  data-testid="account-logout"
-                >
-                  <LogOut size={15} />
-                  Sign out
-                </button>
-              </div>
-            </nav>
-
-            {/* Content */}
+          <div>
             <div>
               {tab === 'profile' && (
                 <div className="space-y-6">
@@ -279,9 +243,9 @@ export default function Account() {
             </div>
           </div>
         )}
-      </main>
+      </div>
+    </AppLayout>
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-      <Footer />
     </>
   );
 }

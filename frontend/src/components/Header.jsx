@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, User, Menu, X,
-  ChevronDown, LogOut, LayoutDashboard,
+  ChevronDown, LogOut, Settings as SettingsIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import ReflexityMark from "@/components/ReflexityMark";
@@ -127,26 +127,10 @@ export default function Header() {
                       <button
                         onClick={() => { navigate("/account"); setAccountOpen(false); }}
                         className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
-                        data-testid="account-dropdown-account"
+                        data-testid="account-dropdown-settings"
                       >
-                        <User size={13} /> Account
+                        <SettingsIcon size={13} /> {user.role === "admin" ? "Open admin panel" : "Open settings"}
                       </button>
-                      <button
-                        onClick={() => { navigate("/account?tab=orders"); setAccountOpen(false); }}
-                        className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-300 hover:text-white hover:bg-white/5 transition-colors"
-                        data-testid="account-dropdown-orders"
-                      >
-                        Orders
-                      </button>
-                      {user.role === "admin" && (
-                        <button
-                          onClick={() => { navigate("/admin"); setAccountOpen(false); }}
-                          className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
-                          data-testid="account-dropdown-admin"
-                        >
-                          <LayoutDashboard size={13} /> Admin Dashboard
-                        </button>
-                      )}
                       <div className="border-t border-white/5" />
                       <button
                         onClick={handleLogout}

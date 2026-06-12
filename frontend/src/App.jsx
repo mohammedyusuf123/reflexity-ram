@@ -1,6 +1,6 @@
 import "@/App.css";
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster, toast } from "sonner";
 
 import ScrollToTop from "@/components/ScrollToTop";
@@ -32,7 +32,6 @@ import Support from "@/pages/policies/Support";
 import FAQ from "@/pages/policies/FAQ";
 
 // Admin pages
-import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminProducts from "@/pages/admin/Products";
 import AdminOrders from "@/pages/admin/Orders";
 import AdminUsers from "@/pages/admin/Users";
@@ -85,7 +84,7 @@ export default function App() {
           <Route path="/faq" element={<FAQ />} />
 
           {/* Admin (protected by AdminLayout) */}
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<Navigate to="/admin/products" replace />} />
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/users" element={<AdminUsers />} />

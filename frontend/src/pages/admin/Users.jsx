@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Search, ChevronLeft, ChevronRight, Shield, ShieldOff } from 'lucide-react';
 import { toast } from 'sonner';
-import AdminLayout from '@/components/AdminLayout';
+import AppLayout from '@/components/AppLayout';
 import { adminApi } from '@/lib/api';
 import useAuthStore from '@/lib/authStore';
 
@@ -69,7 +69,7 @@ export default function AdminUsers() {
   };
 
   return (
-    <AdminLayout>
+    <AppLayout requireAdmin>
       <div className="p-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">Users</h1>
@@ -195,6 +195,6 @@ export default function AdminUsers() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </AppLayout>
   );
 }

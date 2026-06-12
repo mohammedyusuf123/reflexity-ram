@@ -137,7 +137,7 @@ router.post(
     body('sku').trim().notEmpty().withMessage('SKU required'),
     body('name').trim().notEmpty().withMessage('Name required').isLength({ max: 200 }),
     body('line').trim().notEmpty().withMessage('Line required'),
-    body('generation').isIn(['DDR4', 'DDR5']).withMessage('Invalid generation'),
+    body('generation').isIn(['DDR3', 'DDR4', 'DDR5']).withMessage('Invalid generation'),
     body('formFactor').isIn(['UDIMM', 'SO-DIMM', 'RDIMM', 'LRDIMM']).withMessage('Invalid form factor'),
     body('capacity').isNumeric().withMessage('Capacity must be a number'),
     body('capacityLabel').trim().notEmpty(),
@@ -158,7 +158,7 @@ router.post(
         'capacityLabel', 'kit', 'speed', 'speedLabel', 'cas', 'timings', 'voltage',
         'ecc', 'rank', 'profile', 'heatspreader', 'rgb', 'condition', 'warranty',
         'price', 'compareAt', 'stockQuantity', 'estimatedDispatch', 'images',
-        'tags', 'compatibility', 'included', 'isFeatured', 'description',
+        'tags', 'compatibility', 'included', 'isFeatured', 'isActive', 'description',
         'metaTitle', 'metaDescription',
       ];
       const data = {};
@@ -181,6 +181,12 @@ router.post(
       if (err.code === 11000) {
         const field = Object.keys(err.keyPattern)[0];
         return res.status(409).json({ error: `${field} already exists` });
+      }
+      // Surface schema validation failures as actionable 400s instead of a
+      // generic 500 — this is how the condition-enum bug stayed invisible.
+      if (err.name === 'ValidationError') {
+        const messages = Object.values(err.errors).map(e => e.message);
+        return res.status(400).json({ error: messages.join('; ') });
       }
       console.error('Create product error:', err);
       res.status(500).json({ error: 'Failed to create product' });
@@ -235,6 +241,10 @@ router.patch(
 
       res.json({ product });
     } catch (err) {
+      if (err.name === 'ValidationError') {
+        const messages = Object.values(err.errors).map(e => e.message);
+        return res.status(400).json({ error: messages.join('; ') });
+      }
       console.error('Update product error:', err);
       res.status(500).json({ error: 'Failed to update product' });
     }

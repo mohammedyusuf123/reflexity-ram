@@ -35,7 +35,7 @@ const productSchema = new mongoose.Schema({
   },
   generation: {
     type: String,
-    enum: ['DDR4', 'DDR5'],
+    enum: ['DDR3', 'DDR4', 'DDR5'],
     required: true,
   },
   formFactor: {
@@ -65,11 +65,9 @@ const productSchema = new mongoose.Schema({
   profile: { type: String }, // XMP 3.0, JEDEC, etc.
   heatspreader: { type: String },
   rgb: { type: Boolean, default: false },
-  condition: {
-    type: String,
-    enum: ['New', 'Open Box — Tested', 'Refurbished — Tested'],
-    required: true,
-  },
+  // Free text — the store sells used/pulled modules, so a fixed enum was too
+  // restrictive ("Used" was rejected, surfacing as a generic 500 in admin).
+  condition: { type: String, required: true, trim: true },
   warranty: { type: String, required: true },
   price: {
     type: Number,

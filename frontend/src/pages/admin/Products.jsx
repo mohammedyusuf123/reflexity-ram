@@ -2,18 +2,20 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Plus, Pencil, Trash2, Upload, X, Check, Loader2,
-  Search, ChevronLeft, ChevronRight, ImageIcon, AlertTriangle
+  Search, ChevronLeft, ChevronRight, ImageIcon, AlertTriangle,
+  ClipboardPaste
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/AdminLayout';
 import { adminApi } from '@/lib/api';
+import { parseRamTemplate } from '@/lib/ramTemplate';
 
 const EMPTY_PRODUCT = {
   slug: '', sku: '', name: '', line: 'Desktop', generation: 'DDR4',
   formFactor: 'UDIMM', capacity: 16, capacityLabel: '16GB', kit: '',
   speed: 3200, speedLabel: '3200 MT/s', cas: 'CL16', timings: '', voltage: '1.35V',
   ecc: false, rank: 'Single Rank', profile: 'XMP 2.0', heatspreader: '',
-  rgb: false, condition: 'New', warranty: 'Limited Lifetime',
+  rgb: false, condition: 'Used', warranty: '90 Days',
   price: 0, compareAt: '', stockQuantity: 0, estimatedDispatch: '1–2 business days',
   images: [], tags: '', compatibility: '', included: '', isFeatured: false, isActive: true,
 };
@@ -96,26 +98,127 @@ function normalizeProduct(p) {
     compareAt: p.compareAt || '',
   };
 }
+// Compact paste box. Paste a structured template from ChatGPT and the form
+// below auto-fills. No API call — purely a text parser (lib/ramTemplate.js).
+function TemplatePasteBox({ onParse }) {
+  const [text, setText] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const handleParse = () => {
+    const parsed = parseRamTemplate(text);
+    if (Object.keys(parsed).length === 0) {
+      toast.error('No recognizable fields found in template');
+      return;
+    }
+    onParse(parsed);
+    const count = Object.keys(parsed).length;
+    toast.success(`Filled ${count} field${count !== 1 ? 's' : ''} from template`);
+    setText('');
+    setOpen(false);
+  };
+
+  return (
+    <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.02]">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full px-4 py-3 flex items-center justify-between text-[13px] hover:bg-white/[0.03] transition-colors"
+      >
+        <span className="flex items-center gap-2 text-neutral-300">
+          <ClipboardPaste size={14} />
+          Paste listing template
+        </span>
+        <span className="text-[11px] text-neutral-500">{open ? 'Hide' : 'Show'}</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-3">
+          <p className="text-[12px] text-neutral-500">
+            Ask ChatGPT for the listing in <span className="mono">Field: value</span> format (one per line). Anything missing is left blank for you to fill in.
+          </p>
+          <textarea
+            className="input min-h-[140px] mono text-[12px]"
+            placeholder={`Name: Samsung 64GB DDR4-3200 ECC RDIMM Server Memory\nLine: Server\nGeneration: DDR4\nForm Factor: RDIMM\nCapacity: 64\n…`}
+            value={text}
+            onChange={e => setText(e.target.value)}
+          />
+          <button type="button" onClick={handleParse} disabled={!text.trim()} className="btn-secondary text-[13px]">
+            Fill form from template
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Section header — light visual grouping inside the otherwise-stacked form.
+const SectionLabel = ({ children }) => (
+  <div className="text-[11px] uppercase tracking-widest text-neutral-500 mt-6 mb-1 first:mt-0">
+    {children}
+  </div>
+);
+
+// Single labeled field — drop-in row component for the line-by-line layout.
+const Row = ({ label, hint, required, children }) => (
+  <div>
+    <label className="admin-label flex items-center justify-between">
+      <span>{label}{required && ' *'}</span>
+      {hint && <span className="text-[10px] text-neutral-600 normal-case tracking-normal">{hint}</span>}
+    </label>
+    {children}
+  </div>
+);
+
+// Form factors valid for a given Line value. Server lines accept everything;
+// laptop lines only SO-DIMM; everything else only UDIMM. Drives the Form
+// Factor select so you can't accidentally save an LRDIMM on a desktop listing.
+const formFactorsForLine = (line) => {
+  if (line === 'Server' || line === 'Workstation') return ['RDIMM', 'LRDIMM', 'UDIMM', 'SO-DIMM'];
+  if (line === 'Laptop' || line === 'Laptop / Mini-PC') return ['SO-DIMM'];
+  return ['UDIMM'];
+};
+
 function ProductModal({ product, onClose, onSave }) {
-  const [form, setForm] = useState(() => normalizeProduct(product));
-  const [saving, setSaving] = useState(false);
-  const [idsTouched, setIdsTouched] = useState(!!product?._id);
   const isEdit = !!product?._id;
+  const [form, setForm] = useState(() => normalizeProduct(product));
+  const [idsTouched, setIdsTouched] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  // New listings: auto-fill slug + SKU from the name so you only type it once.
-  // Stops as soon as you manually edit either field.
+  // When Line changes, snap Form Factor to a valid option for that line.
+  const handleLineChange = (line) => {
+    setForm(f => {
+      const validFFs = formFactorsForLine(line);
+      const nextFF = validFFs.includes(f.formFactor) ? f.formFactor : validFFs[0];
+      return { ...f, line, formFactor: nextFF };
+    });
+  };
+
+  // Apply parsed template on top of current form state.
+  const applyTemplate = (parsed) => {
+    setForm(f => {
+      const next = { ...f };
+      for (const [key, value] of Object.entries(parsed)) {
+        if (value === undefined || value === '') continue;
+        next[key] = value;
+      }
+      // Reconcile form factor with the (possibly newly-set) line
+      const validFFs = formFactorsForLine(next.line);
+      if (!validFFs.includes(next.formFactor)) next.formFactor = validFFs[0];
+      return next;
+    });
+    if (parsed.slug || parsed.sku) setIdsTouched(true);
+  };
+
+  // Auto-fill slug + SKU from the name on new listings until you edit them
   const handleNameChange = (name) => {
     setForm(f => {
       const next = { ...f, name };
       if (!isEdit && !idsTouched) {
-        const base = name.toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '')
-          .slice(0, 48);
-        next.slug = base ? `rfx-${base}` : '';
-        next.sku = base ? `RFX-${base.toUpperCase().replace(/-/g, '-').slice(0, 24)}` : '';
+        const slugBase = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
+        next.slug = slugBase ? `rfx-${slugBase}` : '';
+        const skuBase = name.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
+        next.sku = skuBase ? `RFX-${skuBase}` : '';
       }
       return next;
     });
@@ -125,7 +228,6 @@ function ProductModal({ product, onClose, onSave }) {
     e.preventDefault();
     setSaving(true);
     try {
-      // Convert comma-separated strings to arrays
       const data = {
         ...form,
         tags: typeof form.tags === 'string' ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : form.tags,
@@ -137,13 +239,9 @@ function ProductModal({ product, onClose, onSave }) {
         price: Number(form.price),
         stockQuantity: Number(form.stockQuantity),
       };
-
-      let result;
-      if (isEdit) {
-        result = await adminApi.updateProduct(form._id, data);
-      } else {
-        result = await adminApi.createProduct(data);
-      }
+      const result = isEdit
+        ? await adminApi.updateProduct(form._id, data)
+        : await adminApi.createProduct(data);
       toast.success(isEdit ? 'Product updated' : 'Product created');
       onSave(result.data.product);
     } catch (err) {
@@ -155,53 +253,144 @@ function ProductModal({ product, onClose, onSave }) {
     }
   };
 
+  const formFactors = formFactorsForLine(form.line);
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-auto">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl glass rounded-2xl p-6 my-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-bold text-lg">{isEdit ? 'Edit product' : 'Add product'}</h2>
+      <div className="relative z-10 w-full max-w-xl glass rounded-2xl p-6 my-8">
+
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-bold text-lg">{isEdit ? 'Edit product' : 'New product'}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5">
             <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* ── Essentials — what you touch on every listing ─────────────── */}
-          <div>
-            <label className="admin-label">Product name *</label>
-            <input className="input" value={form.name} onChange={e => handleNameChange(e.target.value)} required placeholder="32GB (2x16GB) DDR5-6000 CL30 EXPO Kit" />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
 
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="admin-label">Price ($) *</label>
-              <input type="number" step="0.01" className="input" value={form.price} onChange={e => setField('price', e.target.value)} required />
+          {!isEdit && (
+            <div className="mb-2">
+              <TemplatePasteBox onParse={applyTemplate} />
             </div>
-            <div>
-              <label className="admin-label">Compare at ($)</label>
-              <input type="number" step="0.01" className="input" value={form.compareAt || ''} onChange={e => setField('compareAt', e.target.value)} placeholder="Optional" />
-            </div>
-            <div>
-              <label className="admin-label">Stock qty *</label>
-              <input type="number" className="input" value={form.stockQuantity} onChange={e => setField('stockQuantity', e.target.value)} required />
-            </div>
-          </div>
+          )}
 
-          <div>
-            <label className="admin-label">Images</label>
-            <ImageUploader
-              images={form.images || []}
-              onChange={imgs => setField('images', imgs)}
-            />
-          </div>
+          <SectionLabel>Product</SectionLabel>
 
-          <div>
-            <label className="admin-label">Description</label>
-            <textarea className="input min-h-[80px]" value={form.description || ''} onChange={e => setField('description', e.target.value)} placeholder="Shown on the listing page" />
-          </div>
+          <Row label="Product name" required>
+            <input className="input" value={form.name} onChange={e => handleNameChange(e.target.value)} required placeholder="e.g. Samsung 64GB DDR4-3200 ECC RDIMM Server Memory" />
+          </Row>
 
-          <div className="flex gap-4">
+          <Row label="Line">
+            <select className="input" value={form.line} onChange={e => handleLineChange(e.target.value)}>
+              <option>Desktop</option>
+              <option>Laptop / Mini-PC</option>
+              <option>Server</option>
+              <option>Workstation</option>
+              <option>Gaming / Enthusiast</option>
+              <option>Mainstream</option>
+            </select>
+          </Row>
+
+          <Row label="Generation">
+            <select className="input" value={form.generation} onChange={e => setField('generation', e.target.value)}>
+              <option>DDR3</option>
+              <option>DDR4</option>
+              <option>DDR5</option>
+            </select>
+          </Row>
+
+          <Row label="Form factor" hint={formFactors.length === 1 ? `Only ${formFactors[0]} for ${form.line}` : null}>
+            <select className="input" value={form.formFactor} onChange={e => setField('formFactor', e.target.value)}>
+              {formFactors.map(ff => <option key={ff}>{ff}</option>)}
+            </select>
+          </Row>
+
+          <SectionLabel>Capacity & speed</SectionLabel>
+
+          <Row label="Capacity (GB)">
+            <input type="number" className="input" value={form.capacity} onChange={e => setField('capacity', e.target.value)} placeholder="16" />
+          </Row>
+
+          <Row label="Capacity label" hint="As shown to the buyer">
+            <input className="input" value={form.capacityLabel} onChange={e => setField('capacityLabel', e.target.value)} placeholder="16GB" />
+          </Row>
+
+          <Row label="Speed (MT/s)">
+            <input type="number" className="input" value={form.speed} onChange={e => setField('speed', e.target.value)} placeholder="3200" />
+          </Row>
+
+          <Row label="Speed label">
+            <input className="input" value={form.speedLabel} onChange={e => setField('speedLabel', e.target.value)} placeholder="3200 MT/s" />
+          </Row>
+
+          <Row label="CAS latency">
+            <input className="input" value={form.cas} onChange={e => setField('cas', e.target.value)} placeholder="CL16" />
+          </Row>
+
+          <Row label="Timings">
+            <input className="input" value={form.timings} onChange={e => setField('timings', e.target.value)} placeholder="16-18-18-38" />
+          </Row>
+
+          <Row label="Voltage">
+            <input className="input" value={form.voltage} onChange={e => setField('voltage', e.target.value)} placeholder="1.35V" />
+          </Row>
+
+          <SectionLabel>Condition</SectionLabel>
+
+          <Row label="Condition">
+            <input className="input" value={form.condition} onChange={e => setField('condition', e.target.value)} placeholder="Used" />
+          </Row>
+
+          <Row label="Warranty">
+            <input className="input" value={form.warranty} onChange={e => setField('warranty', e.target.value)} placeholder="90 Days" />
+          </Row>
+
+          <SectionLabel>Pricing & inventory</SectionLabel>
+
+          <Row label="Price ($)" required>
+            <input type="number" step="0.01" className="input" value={form.price} onChange={e => setField('price', e.target.value)} required placeholder="129.99" />
+          </Row>
+
+          <Row label="Compare at ($)" hint="Optional — shows a strikethrough">
+            <input type="number" step="0.01" className="input" value={form.compareAt || ''} onChange={e => setField('compareAt', e.target.value)} placeholder="159.99" />
+          </Row>
+
+          <Row label="Stock quantity" required>
+            <input type="number" className="input" value={form.stockQuantity} onChange={e => setField('stockQuantity', e.target.value)} required placeholder="10" />
+          </Row>
+
+          <SectionLabel>Identifiers</SectionLabel>
+
+          <Row label="Slug" required hint="Auto-filled from name">
+            <input className="input mono text-[12px]" value={form.slug} onChange={e => { setIdsTouched(true); setField('slug', e.target.value); }} required />
+          </Row>
+
+          <Row label="SKU" required hint="Auto-filled from name">
+            <input className="input mono text-[12px]" value={form.sku} onChange={e => { setIdsTouched(true); setField('sku', e.target.value); }} required />
+          </Row>
+
+          <SectionLabel>Listing</SectionLabel>
+
+          <Row label="Tags" hint="Comma-separated">
+            <input className="input" value={Array.isArray(form.tags) ? form.tags.join(', ') : form.tags} onChange={e => setField('tags', e.target.value)} placeholder="DDR4, Desktop, XMP" />
+          </Row>
+
+          <Row label="Compatibility" hint="One item per line">
+            <textarea className="input min-h-[70px]" value={Array.isArray(form.compatibility) ? form.compatibility.join('\n') : form.compatibility} onChange={e => setField('compatibility', e.target.value)} placeholder="Intel XMP compatible&#10;AMD Ryzen compatible" />
+          </Row>
+
+          <Row label="Description">
+            <textarea className="input min-h-[80px]" value={form.description || ''} onChange={e => setField('description', e.target.value)} placeholder="Shown on the product page" />
+          </Row>
+
+          <Row label="Images">
+            <ImageUploader images={form.images || []} onChange={imgs => setField('images', imgs)} />
+          </Row>
+
+          <SectionLabel>Visibility</SectionLabel>
+
+          <div className="space-y-2 pt-1">
             <label className="flex items-center gap-2 text-[13px] cursor-pointer">
               <input type="checkbox" checked={form.isActive !== false} onChange={e => setField('isActive', e.target.checked)} />
               Active (visible in store)
@@ -210,114 +399,13 @@ function ProductModal({ product, onClose, onSave }) {
               <input type="checkbox" checked={form.isFeatured} onChange={e => setField('isFeatured', e.target.checked)} />
               Featured on homepage
             </label>
+            <label className="flex items-center gap-2 text-[13px] cursor-pointer">
+              <input type="checkbox" checked={form.ecc} onChange={e => setField('ecc', e.target.checked)} />
+              ECC memory
+            </label>
           </div>
 
-          {/* ── IDs — auto-filled from the name, editable if needed ───────── */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="admin-label">Slug *</label>
-              <input className="input" value={form.slug} onChange={e => { setIdsTouched(true); setField('slug', e.target.value); }} required placeholder="auto-filled from name" />
-            </div>
-            <div>
-              <label className="admin-label">SKU *</label>
-              <input className="input" value={form.sku} onChange={e => { setIdsTouched(true); setField('sku', e.target.value); }} required placeholder="auto-filled from name" />
-            </div>
-          </div>
-
-          {/* ── Specs — collapsed by default, open when you need them ─────── */}
-          <details className="group rounded-xl border border-white/10">
-            <summary className="cursor-pointer select-none px-4 py-3 text-[13px] text-neutral-300 hover:text-white flex items-center justify-between">
-              Memory specs & details
-              <span className="text-neutral-600 text-[11px] group-open:hidden">Show</span>
-              <span className="text-neutral-600 text-[11px] hidden group-open:inline">Hide</span>
-            </summary>
-            <div className="px-4 pb-4 space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="admin-label">Line</label>
-                  <input className="input" value={form.line} onChange={e => setField('line', e.target.value)} />
-                </div>
-                <div>
-                  <label className="admin-label">Generation</label>
-                  <select className="input" value={form.generation} onChange={e => setField('generation', e.target.value)}>
-                    <option>DDR4</option>
-                    <option>DDR5</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="admin-label">Form factor</label>
-                  <select className="input" value={form.formFactor} onChange={e => setField('formFactor', e.target.value)}>
-                    <option>UDIMM</option>
-                    <option>SO-DIMM</option>
-                    <option>RDIMM</option>
-                    <option>LRDIMM</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                <div>
-                  <label className="admin-label">Capacity (GB)</label>
-                  <input type="number" className="input" value={form.capacity} onChange={e => setField('capacity', e.target.value)} />
-                </div>
-                <div>
-                  <label className="admin-label">Capacity label</label>
-                  <input className="input" value={form.capacityLabel} onChange={e => setField('capacityLabel', e.target.value)} placeholder="16GB" />
-                </div>
-                <div>
-                  <label className="admin-label">Speed (MT/s)</label>
-                  <input type="number" className="input" value={form.speed} onChange={e => setField('speed', e.target.value)} />
-                </div>
-                <div>
-                  <label className="admin-label">Speed label</label>
-                  <input className="input" value={form.speedLabel} onChange={e => setField('speedLabel', e.target.value)} placeholder="3200 MT/s" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="admin-label">CAS</label>
-                  <input className="input" value={form.cas} onChange={e => setField('cas', e.target.value)} placeholder="CL16" />
-                </div>
-                <div>
-                  <label className="admin-label">Timings</label>
-                  <input className="input" value={form.timings} onChange={e => setField('timings', e.target.value)} placeholder="16-18-18-38" />
-                </div>
-                <div>
-                  <label className="admin-label">Voltage</label>
-                  <input className="input" value={form.voltage} onChange={e => setField('voltage', e.target.value)} placeholder="1.35V" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="admin-label">Condition</label>
-                  <input className="input" value={form.condition} onChange={e => setField('condition', e.target.value)} />
-                </div>
-                <div>
-                  <label className="admin-label">Warranty</label>
-                  <input className="input" value={form.warranty} onChange={e => setField('warranty', e.target.value)} />
-                </div>
-              </div>
-
-              <div>
-                <label className="admin-label">Tags (comma-separated)</label>
-                <input className="input" value={Array.isArray(form.tags) ? form.tags.join(', ') : form.tags} onChange={e => setField('tags', e.target.value)} placeholder="DDR4, Desktop, XMP" />
-              </div>
-
-              <div>
-                <label className="admin-label">Compatibility (one per line)</label>
-                <textarea className="input min-h-[60px]" value={Array.isArray(form.compatibility) ? form.compatibility.join('\n') : form.compatibility} onChange={e => setField('compatibility', e.target.value)} />
-              </div>
-
-              <label className="flex items-center gap-2 text-[13px] cursor-pointer">
-                <input type="checkbox" checked={form.ecc} onChange={e => setField('ecc', e.target.checked)} />
-                ECC memory
-              </label>
-            </div>
-          </details>
-
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-4">
             <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
             <button type="submit" disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
               {saving && <Loader2 size={14} className="animate-spin" />}

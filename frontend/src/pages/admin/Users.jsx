@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Search, ChevronLeft, ChevronRight, Shield, ShieldOff, Trash2 } from 'lucide-react';
+import { Loader2, Search, ChevronLeft, ChevronRight, Shield, ShieldOff } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/AdminLayout';
 import { adminApi } from '@/lib/api';
@@ -63,29 +63,6 @@ export default function AdminUsers() {
       toast.success(`User ${data.user.isActive ? 'activated' : 'deactivated'}`);
     } catch {
       toast.error('Failed to update user');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
-
-  const handleDelete = async (u) => {
-    if (u._id === currentUser?._id) {
-      toast.error("You can't delete your own account");
-      return;
-    }
-    
-    if (!window.confirm(`Are you sure you want to PERMANENTLY delete ${u.firstName} ${u.lastName}? This will also delete their cart. This action cannot be undone.`)) {
-      return;
-    }
-
-    setUpdatingId(u._id);
-    try {
-      await adminApi.deleteUser(u._id);
-      setUsers(users.filter(usr => usr._id !== u._id));
-      toast.success('User account deleted');
-    } catch (err) {
-      const msg = err.response?.data?.error || 'Failed to delete user';
-      toast.error(msg);
     } finally {
       setUpdatingId(null);
     }
@@ -193,18 +170,6 @@ export default function AdminUsers() {
                             }`}
                           >
                             {u.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(u)}
-                            disabled={updatingId === u._id}
-                            className="p-1.5 rounded-lg text-neutral-500 hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                            title="Delete user"
-                          >
-                            {updatingId === u._id ? (
-                              <Loader2 size={13} className="animate-spin" />
-                            ) : (
-                              <Trash2 size={13} />
-                            )}
                           </button>
                         </div>
                       </td>

@@ -196,11 +196,6 @@ export default function Account() {
                         </div>
                       </div>
                     </div>
-                    {user.role === 'admin' && (
-                      <Link to="/admin" className="btn-primary mt-4 inline-flex">
-                        Admin Dashboard →
-                      </Link>
-                    )}
                   </div>
                 </div>
               )}

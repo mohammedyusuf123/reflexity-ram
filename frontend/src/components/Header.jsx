@@ -117,11 +117,11 @@ export default function Header() {
                   {isAuthenticated() ? (
                     <>
                       <div className="px-4 py-3 border-b border-white/5">
-                        <div className="text-[12px] font-semibold text-white">
-                          {user.firstName} {user.lastName}
-                        </div>
-                        <div className="text-[11px] text-neutral-500 truncate mt-0.5">
+                        <div className="text-[12px] font-semibold text-white truncate">
                           {user.email}
+                        </div>
+                        <div className="text-[11px] text-neutral-500 mt-0.5">
+                          {user.firstName} {user.lastName}
                         </div>
                       </div>
                       <button
@@ -144,7 +144,7 @@ export default function Header() {
                           className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
                           data-testid="account-dropdown-admin"
                         >
-                          <LayoutDashboard size={13} /> Admin
+                          <LayoutDashboard size={13} /> Admin Dashboard
                         </button>
                       )}
                       <div className="border-t border-white/5" />

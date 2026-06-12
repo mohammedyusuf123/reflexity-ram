@@ -1,5 +1,72 @@
 # Reflexity RAM — Fix Changelog (June 2026)
 
+## 🔧 UPDATE: Header dropdown order + listing form back to single-column
+
+### Header dropdown
+- Email now appears first (primary), name shown underneath (secondary). Matches typical account-menu conventions.
+
+### Listings — back to one clean form
+- Removed the upfront category picker step. Creating a product is now a single screen again.
+- All form fields stacked vertically (one per row) with light section labels: **Product / Capacity & speed / Condition / Pricing & inventory / Identifiers / Listing / Visibility**.
+- "Paste listing template" is still there at the top of the form (collapsed by default) — paste a `Field: value` template from ChatGPT and the form below fills in.
+- Form Factor dropdown adapts to the selected **Line**: Server/Workstation accepts all four (RDIMM, LRDIMM, UDIMM, SO-DIMM), Laptop lines only SO-DIMM, everything else only UDIMM. Changing Line auto-snaps Form Factor to a valid option.
+- Defaults remain Condition = `Used`, Warranty = `90 Days`.
+
+### Account & admin sidebars
+- These were already shipped in the previous push and unchanged in this one. If the browser is showing the old layout, hard-refresh (Cmd-Shift-R / Ctrl-Shift-R) — Cloudflare caches the JS bundle aggressively. Verified layouts:
+  - Header dropdown → **Account** or **Orders** → `/account` page with left sidebar: Profile / Orders / Security / Settings / Sign out
+  - Header dropdown → **Admin Dashboard** → `/admin` page with left sidebar: Dashboard / Products / Orders / Users / Security
+
+
+
+## ✨ NEW: Unified admin entry + fast RAM listing flow
+
+### Admin entry, flattened
+- Header dropdown (your name) → **Admin Dashboard** goes straight to `/admin` — no more bouncing through `/account` first.
+- Removed the redundant "Admin Dashboard →" button from the Account page (it was the intermediate step).
+- AdminLayout sidebar now has **Dashboard / Products / Orders / Users / Security**, all visible at once; every page uses the same layout so clicks never leave the admin shell.
+
+### Security page (`/admin/security`)
+- Change admin password form (uses existing `/api/auth/change-password`).
+- Security checklist: key rotation cadence, .env hygiene, webhook secret check, and a reminder to remove `SEED_SECRET` after launch.
+
+### Listing creation, now under a minute per product
+- **Step 1: category picker** — Server / Desktop / Laptop cards. Picking one prefills `line` and locks the Form Factor dropdown to category-appropriate options:
+  - Desktop → UDIMM only
+  - Laptop → SO-DIMM only
+  - Server → RDIMM, LRDIMM, UDIMM, SO-DIMM
+- **Step 2: paste template + form** — a collapsible "Paste listing template" box at the top of the form. Generate the template in ChatGPT in the documented `Field: value` format, paste, hit "Fill form from template", and the form populates: name, description, slug (auto from name), SKU (from part number or name), tags, compatibility, generation, capacity, speed, CAS, timings, voltage, condition, warranty, price, stock.
+- **New defaults**: Condition = `Used`, Warranty = `90 Days` (both editable). Reflects the used/pulled-stick nature of most server RAM listings.
+- Editing skips the category picker; the inferred category still locks the Form Factor dropdown so you can't accidentally switch a desktop UDIMM into an LRDIMM.
+
+The parser (`frontend/src/lib/ramTemplate.js`) is a plain text utility — no API calls, no AI integration on the website. You can also paste partial templates; anything missing is left untouched.
+
+### Template format (paste into ChatGPT)
+```
+Name: <product name>
+Description: <one or two sentences>
+Line: Desktop | Laptop / Mini-PC | Server
+Generation: DDR3 | DDR4 | DDR5
+Form Factor: UDIMM | SO-DIMM | RDIMM | LRDIMM
+Capacity: <number, in GB>
+Capacity Label: e.g. 16GB
+Speed: <number, in MT/s>
+Speed Label: e.g. 3200 MT/s
+CAS: e.g. CL16
+Timings: e.g. 16-18-18-38
+Voltage: e.g. 1.35V
+Condition: New | Used
+Warranty: e.g. 90 Days | Limited Lifetime
+Tags: comma, separated, list
+Compatibility:
+One item per line
+Or all on one line
+Price: <optional, number>
+Stock: <optional, number>
+Part Number: <optional — becomes SKU>
+```
+
+
 ## ✨ NEW: Stripe Checkout Sessions (replaces custom Payment Element checkout)
 
 **How it works now:** Cart (add items / adjust quantities) → `/checkout` order review → `POST /api/stripe/create-checkout-session` → redirect to Stripe-hosted checkout → Stripe collects address/phone/email and applies tax → customer returns to `/order/success?session_id=...` → order is fulfilled exactly once.

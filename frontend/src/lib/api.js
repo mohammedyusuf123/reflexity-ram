@@ -136,4 +136,10 @@ export const adminApi = {
     api.delete(`/upload/products/${encodeURIComponent(publicId)}`),
 };
 
+// ─── Editable page content (shipping / returns / warranty / faq) ───────────────
+export const pagesApi = {
+  get: (slug) => api.get(`/pages/${slug}`),
+  save: (slug, data) => api.put(`/pages/${slug}`, data),
+};
+
 export default api;

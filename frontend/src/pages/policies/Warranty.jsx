@@ -1,67 +1,30 @@
-import PolicyPage from "@/components/PolicyPage";
+import EditablePolicyPage from "@/components/EditablePolicyPage";
+
+// Default content below is the built-in copy. Admins can override it inline via
+// the Edit button (persisted server-side); this stays as the fallback.
+const DEFAULT_HTML = `<p>Reflexity RAM aims to provide reliable, properly tested memory products backed by reasonable support coverage.</p>
+<h2>Coverage</h2>
+<p>Warranty coverage may vary depending on the specific product, condition, and manufacturer warranty status.</p>
+<p>Where applicable, warranty details will be listed directly on the product page.</p>
+<h2>What's generally covered</h2>
+<ul><li>Products that fail under normal operating conditions</li><li>Verified defective modules</li><li>Issues identified during standard diagnostic testing</li></ul>
+<h2>What's generally not covered</h2>
+<ul><li>Physical damage</li><li>Damage caused by improper installation</li><li>Damage caused by unsupported voltage or extreme overclocking</li><li>Modified or tampered products</li></ul>
+<h2>Warranty claims</h2>
+<p>To begin a warranty request, contact reflexityram@gmail.com with:</p>
+<ul><li>order information</li><li>product SKU or part number</li><li>a brief description of the issue</li><li>any relevant diagnostic or compatibility information</li></ul>
+<h2>Replacement availability</h2>
+<p>Replacement availability depends on inventory and product availability at the time of the claim. If an identical replacement is unavailable, a similar replacement or alternative resolution may be offered.</p>`;
 
 export default function Warranty() {
   return (
-    <PolicyPage
+    <EditablePolicyPage
+      slug="warranty"
       num="03"
       label="Policy"
       title="Warranty"
-      intro="Reflexity RAM aims to provide reliable, properly tested memory products backed by reasonable support coverage."
+      defaultHtml={DEFAULT_HTML}
       testId="warranty-page"
-      sections={[
-        {
-          heading: "Coverage",
-          body: [
-            "Warranty coverage may vary depending on the specific product, condition, and manufacturer warranty status.",
-            "Where applicable, warranty details will be listed directly on the product page.",
-          ],
-        },
-        {
-          heading: "What's generally covered",
-          body: [
-            {
-              list: [
-                "Products that fail under normal operating conditions",
-                "Verified defective modules",
-                "Issues identified during standard diagnostic testing",
-              ],
-            },
-          ],
-        },
-        {
-          heading: "What's generally not covered",
-          body: [
-            {
-              list: [
-                "Physical damage",
-                "Damage caused by improper installation",
-                "Damage caused by unsupported voltage or extreme overclocking",
-                "Modified or tampered products",
-              ],
-            },
-          ],
-        },
-        {
-          heading: "Warranty claims",
-          body: [
-            "To begin a warranty request, contact reflexityram@gmail.com with:",
-            {
-              list: [
-                "order information",
-                "product SKU or part number",
-                "a brief description of the issue",
-                "any relevant diagnostic or compatibility information",
-              ],
-            },
-          ],
-        },
-        {
-          heading: "Replacement availability",
-          body: [
-            "Replacement availability depends on inventory and product availability at the time of the claim. If an identical replacement is unavailable, a similar replacement or alternative resolution may be offered.",
-          ],
-        },
-      ]}
     />
   );
 }

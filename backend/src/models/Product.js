@@ -30,12 +30,12 @@ const productSchema = new mongoose.Schema({
   description: { type: String, trim: true },
   line: {
     type: String,
-    enum: ['Desktop', 'Laptop', 'Laptop / Mini-PC', 'Server', 'Gaming / Enthusiast', 'Workstation', 'Mainstream'],
+    enum: ['Desktop', 'Laptop', 'Server'],
     required: true,
   },
   generation: {
     type: String,
-    enum: ['DDR3', 'DDR4', 'DDR5'],
+    enum: ['DDR4', 'DDR5'],
     required: true,
   },
   formFactor: {
@@ -65,9 +65,11 @@ const productSchema = new mongoose.Schema({
   profile: { type: String }, // XMP 3.0, JEDEC, etc.
   heatspreader: { type: String },
   rgb: { type: Boolean, default: false },
-  // Free text — the store sells used/pulled modules, so a fixed enum was too
-  // restrictive ("Used" was rejected, surfacing as a generic 500 in admin).
-  condition: { type: String, required: true, trim: true },
+  condition: {
+    type: String,
+    enum: ['New', 'Open Box — Tested', 'Refurbished — Tested', 'Used'],
+    required: true,
+  },
   warranty: { type: String, required: true },
   price: {
     type: Number,

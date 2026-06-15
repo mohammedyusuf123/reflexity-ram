@@ -24,30 +24,16 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* CENTER: Shop & Support */}
-        <div className="grid grid-cols-2 gap-8">
-          <div>
-            <div className="mono text-[10px] text-neutral-500 uppercase tracking-widest mb-4">
-              Shop
-            </div>
-            <div className="flex flex-col gap-2.5 text-[13px]">
-              <Link to="/shop" className="text-neutral-300 hover:text-white transition-colors">All Memory</Link>
-              <Link to="/shop?form=UDIMM" className="text-neutral-300 hover:text-white transition-colors">Desktop</Link>
-              <Link to="/shop?form=SO-DIMM" className="text-neutral-300 hover:text-white transition-colors">Laptop</Link>
-              <Link to="/shop?form=RDIMM" className="text-neutral-300 hover:text-white transition-colors">Server</Link>
-            </div>
+        {/* CENTER: Support */}
+        <div>
+          <div className="mono text-[10px] text-neutral-500 uppercase tracking-widest mb-4">
+            Support
           </div>
-
-          <div>
-            <div className="mono text-[10px] text-neutral-500 uppercase tracking-widest mb-4">
-              Support
-            </div>
-            <div className="flex flex-col gap-2.5 text-[13px]">
-              <Link to="/shipping" className="text-neutral-300 hover:text-white transition-colors">Shipping</Link>
-              <Link to="/returns" className="text-neutral-300 hover:text-white transition-colors">Returns</Link>
-              <Link to="/warranty" className="text-neutral-300 hover:text-white transition-colors">Warranty</Link>
-              <Link to="/faq" className="text-neutral-300 hover:text-white transition-colors">FAQ</Link>
-            </div>
+          <div className="flex flex-col gap-2.5 text-[13px]">
+            <Link to="/shipping" className="text-neutral-300 hover:text-white transition-colors">Shipping</Link>
+            <Link to="/returns" className="text-neutral-300 hover:text-white transition-colors">Returns</Link>
+            <Link to="/warranty" className="text-neutral-300 hover:text-white transition-colors">Warranty</Link>
+            <Link to="/faq" className="text-neutral-300 hover:text-white transition-colors">FAQ</Link>
           </div>
         </div>
 

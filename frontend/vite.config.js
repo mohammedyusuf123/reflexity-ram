@@ -32,8 +32,6 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             vendor: ['react', 'react-dom', 'react-router-dom'],
-            ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
-            stripe: ['@stripe/stripe-js', '@stripe/react-stripe-js'],
           },
         },
       },

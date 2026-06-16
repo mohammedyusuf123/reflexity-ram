@@ -127,8 +127,18 @@ router.post(
     try {
       const { email, password } = req.body;
 
-      const user = await User.findOne({ email }).select('+password');
-      if (!user || !user.password) {
+      const user = await User.findOne({ email }).select('+password +googleId');
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+      // Account exists but was created via Google (no password set). Tell the
+      // user to use the Google button instead of failing generically.
+      if (!user.password) {
+        if (user.googleId) {
+          return res.status(401).json({
+            error: 'This account uses Google sign-in. Please continue with Google.',
+          });
+        }
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
@@ -461,12 +471,21 @@ router.get('/google/callback', async (req, res) => {
       user.lastLoginAt = new Date();
       await user.save({ validateBeforeSave: false });
     } else {
-      const nameParts = (profile.name || '').split(' ');
+      const nameParts = (profile.name || '').split(' ').filter(Boolean);
+      // lastName is required on the User model. Google accounts with a
+      // single-word name (no family_name) would otherwise produce an empty
+      // lastName and fail validation → server_error. Fall back so creation
+      // always succeeds; the user can edit it later in their profile.
+      const firstName = profile.given_name || nameParts[0] || 'User';
+      const lastName =
+        profile.family_name ||
+        nameParts.slice(1).join(' ') ||
+        '—';
       user = await User.create({
         email,
         googleId: profile.id,
-        firstName: profile.given_name || nameParts[0] || 'User',
-        lastName: profile.family_name || nameParts.slice(1).join(' ') || '',
+        firstName,
+        lastName,
         avatar: profile.picture || null,
         isEmailVerified: true,
         isActive: true,
@@ -491,7 +510,7 @@ router.get('/google/callback', async (req, res) => {
 
     res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&user=${userData}`);
   } catch (err) {
-    console.error('Google OAuth callback error:', err);
+    console.error('Google OAuth callback error:', err.message, err);
     fail('server_error');
   }
 });

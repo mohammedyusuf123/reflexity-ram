@@ -52,7 +52,7 @@ export default function Checkout() {
             <Link to="/shop" className="btn-primary mt-4 inline-flex">Browse memory</Link>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-5 gap-8 max-w-4xl">
+          <div className="grid lg:grid-cols-5 gap-8 max-w-5xl mx-auto">
             {/* Order review */}
             <div className="lg:col-span-3 space-y-3">
               {items.map((item) => (

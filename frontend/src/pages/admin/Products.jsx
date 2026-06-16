@@ -302,12 +302,26 @@ export default function AdminProducts() {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Quick action: /admin/products?new=1 opens the Add modal directly
+  // Quick actions via URL params:
+  //  ?new=1        → open the Add modal
+  //  ?edit=<id>    → open the Edit modal for that product (used by the
+  //                  "Edit this product" button on the public store page)
   useEffect(() => {
     if (searchParams.get('new') === '1') {
       setModalProduct({});
       setModalOpen(true);
       setSearchParams({}, { replace: true });
+      return;
+    }
+    const editId = searchParams.get('edit');
+    if (editId) {
+      adminApi.getProduct(editId)
+        .then(({ data }) => {
+          setModalProduct(data.product);
+          setModalOpen(true);
+        })
+        .catch(() => toast.error('Could not load that product'))
+        .finally(() => setSearchParams({}, { replace: true }));
     }
   }, [searchParams]);
 

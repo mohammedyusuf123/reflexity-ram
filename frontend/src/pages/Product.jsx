@@ -242,7 +242,7 @@ export default function Product() {
 
               {isAdmin() && p._id && (
                 <Link
-                  to={`/admin/products/edit/${p._id}`}
+                  to={`/admin/products?edit=${p._id}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors text-[12px] font-medium"
                 >
                   <Pencil size={11} /> Edit this product

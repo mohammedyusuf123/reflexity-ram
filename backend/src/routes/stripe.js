@@ -81,7 +81,7 @@ router.post('/create-checkout-session', optionalAuth, async (req, res) => {
       // US customers: with no US registrations added, Stripe Tax charges $0.
       // To collect US tax later (if nexus is established), add the state
       // registrations in Stripe — no code change needed.
-      automatic_tax: { enabled: process.env.STRIPE_TAX_ENABLED === 'true' },
+      automatic_tax: { enabled: true },
 
       customer_email: req.user?.email || undefined,
       client_reference_id: userId ? userId.toString() : sessionId,

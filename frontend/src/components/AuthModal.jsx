@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import useAuthStore from '@/lib/authStore';
@@ -12,6 +12,13 @@ export default function AuthModal({ open, onClose, initialTab = 'signin' }) {
   const [showPw, setShowPw] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
+
+  // Sync the active tab when the modal opens or the trigger requests a
+  // different tab. Without this, useState(initialTab) only applies once on
+  // mount, so clicking "Create account" after "Sign in" kept showing signin.
+  useEffect(() => {
+    if (open) setTab(initialTab);
+  }, [open, initialTab]);
 
   const { login, signup, isLoading } = useAuthStore();
   const { fetchCart } = useCartStore();

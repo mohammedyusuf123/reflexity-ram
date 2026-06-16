@@ -34,7 +34,7 @@ export default function OrderSuccess() {
   return (
     <>
       <Header />
-      <main className="container-tight pt-28 pb-20 min-h-screen" data-testid="order-success-page">
+      <main className="container-tight pt-32 pb-20 min-h-screen flex flex-col items-center" data-testid="order-success-page">
         {loading ? (
           <div className="flex items-center gap-2 text-neutral-400 py-12">
             <Loader2 size={16} className="animate-spin" />

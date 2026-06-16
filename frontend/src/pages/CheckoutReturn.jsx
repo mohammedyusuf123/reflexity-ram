@@ -63,7 +63,7 @@ export default function CheckoutReturn() {
   return (
     <>
       <Header />
-      <main className="container-tight pt-28 pb-20 min-h-screen flex items-start justify-center">
+      <main className="container-tight pt-32 pb-20 min-h-screen flex flex-col items-center justify-start">
         {error ? (
           <div className="glass rounded-2xl p-8 max-w-lg flex items-start gap-3 mt-12">
             <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />

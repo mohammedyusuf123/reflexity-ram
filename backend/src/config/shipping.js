@@ -29,7 +29,7 @@ const toStripeShippingOptions = () =>
       type: 'fixed_amount',
       display_name: opt.label,
       fixed_amount: { amount: Math.round(opt.price * 100), currency: CURRENCY },
-      tax_behavior: 'exclusive',
+      ...(process.env.STRIPE_TAX_ENABLED === 'true' && { tax_behavior: 'exclusive' }),
       delivery_estimate: {
         minimum: { unit: 'business_day', value: opt.minDays },
         maximum: { unit: 'business_day', value: opt.maxDays },

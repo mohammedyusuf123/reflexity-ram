@@ -61,6 +61,9 @@ const orderSchema = new mongoose.Schema({
   total: { type: Number, required: true },
   // Guard flag: stock is decremented exactly once per order (see utils/stock.js)
   stockDecremented: { type: Boolean, default: false },
+  // Admins can archive orders to declutter the list without deleting the
+  // financial record. Archived orders are hidden from the default view.
+  archived: { type: Boolean, default: false },
   shippingMethod: { type: String },
   trackingNumber: { type: String },
   trackingUrl: { type: String },

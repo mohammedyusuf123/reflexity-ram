@@ -12,7 +12,7 @@ const pageContentSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      enum: ['shipping', 'returns', 'warranty', 'faq'],
+      enum: ['shipping', 'returns', 'warranty', 'faq', 'international'],
     },
     title: { type: String, required: true, trim: true },
     // Sanitized HTML body

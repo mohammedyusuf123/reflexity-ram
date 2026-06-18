@@ -121,6 +121,7 @@ export const adminApi = {
   listOrders: (params) => api.get('/admin/orders', { params }),
   getOrder: (id) => api.get(`/admin/orders/${id}`),
   updateOrderStatus: (id, data) => api.patch(`/admin/orders/${id}/status`, data),
+  archiveOrder: (id, archived) => api.patch(`/admin/orders/${id}/archive`, { archived }),
 
   // Users
   listUsers: (params) => api.get('/admin/users', { params }),

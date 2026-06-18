@@ -303,13 +303,19 @@ router.get(
     queryValidator('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     queryValidator('status').optional().isIn(['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']),
     queryValidator('search').optional().trim(),
+    queryValidator('archived').optional().isIn(['true', 'false', 'all']),
   ],
   validate,
   async (req, res) => {
     try {
-      const { page = 1, limit = 20, status, search } = req.query;
+      const { page = 1, limit = 20, status, search, archived } = req.query;
       const filter = {};
       if (status) filter.status = status;
+      // By default hide archived orders. ?archived=true shows only archived,
+      // ?archived=all shows everything.
+      if (archived === 'true') filter.archived = true;
+      else if (archived === 'all') { /* no archived filter */ }
+      else filter.archived = { $ne: true };
       if (search) {
         filter.$or = [
           { orderNumber: { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
@@ -408,6 +414,26 @@ router.patch(
       res.json({ order });
     } catch (err) {
       res.status(500).json({ error: 'Failed to update order status' });
+    }
+  }
+);
+
+// PATCH /api/admin/orders/:id/archive — toggle archived (declutter, not delete)
+router.patch(
+  '/orders/:id/archive',
+  [body('archived').isBoolean()],
+  validate,
+  async (req, res) => {
+    try {
+      const order = await Order.findByIdAndUpdate(
+        req.params.id,
+        { archived: req.body.archived },
+        { new: true }
+      );
+      if (!order) return res.status(404).json({ error: 'Order not found' });
+      res.json({ order });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to archive order' });
     }
   }
 );

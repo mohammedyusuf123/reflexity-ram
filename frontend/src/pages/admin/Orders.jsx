@@ -156,12 +156,19 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [archivedView, setArchivedView] = useState(false);
   const [page, setPage] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
 
-  const load = (p = page, q = search, s = statusFilter) => {
+  const load = (p = page, q = search, s = statusFilter, arch = archivedView) => {
     setLoading(true);
-    adminApi.listOrders({ page: p, limit: 20, search: q || undefined, status: s || undefined })
+    adminApi.listOrders({
+      page: p,
+      limit: 20,
+      search: q || undefined,
+      status: s || undefined,
+      archived: arch ? 'true' : 'false',
+    })
       .then(({ data }) => {
         setOrders(data.orders);
         setPagination(data.pagination);
@@ -170,7 +177,17 @@ export default function AdminOrders() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [page, statusFilter]);
+  useEffect(() => { load(); }, [page, statusFilter, archivedView]);
+
+  const handleArchive = async (id, archived) => {
+    try {
+      await adminApi.archiveOrder(id, archived);
+      toast.success(archived ? 'Order archived' : 'Order restored');
+      load();
+    } catch {
+      toast.error('Failed to update order');
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -210,6 +227,13 @@ export default function AdminOrders() {
               <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
             ))}
           </select>
+          <button
+            type="button"
+            onClick={() => { setArchivedView(v => !v); setPage(1); }}
+            className={archivedView ? 'btn-primary' : 'btn-secondary'}
+          >
+            {archivedView ? 'Viewing archived' : 'Show archived'}
+          </button>
         </div>
 
         <div className="glass rounded-2xl overflow-hidden">
@@ -254,12 +278,21 @@ export default function AdminOrders() {
                         {new Date(o.createdAt).toLocaleDateString()}
                       </td>
                       <td className="p-4 text-right">
-                        <button
-                          onClick={() => setSelectedOrderId(o._id)}
-                          className="btn-ghost py-1 px-2.5 text-[11px]"
-                        >
-                          Manage
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setSelectedOrderId(o._id)}
+                            className="btn-ghost py-1 px-2.5 text-[11px]"
+                          >
+                            Manage
+                          </button>
+                          <button
+                            onClick={() => handleArchive(o._id, !o.archived)}
+                            className="btn-ghost py-1 px-2.5 text-[11px] text-neutral-500 hover:text-white"
+                            title={o.archived ? 'Restore order' : 'Archive order'}
+                          >
+                            {o.archived ? 'Restore' : 'Archive'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

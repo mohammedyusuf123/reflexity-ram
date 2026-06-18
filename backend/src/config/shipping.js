@@ -4,9 +4,7 @@
 // Keep frontend/src/pages/Checkout.jsx SHIPPING_OPTIONS labels in sync for display.
 
 const SHIPPING_OPTIONS = {
-  standard: { id: 'standard', label: 'Standard Shipping', price: 0, minDays: 5, maxDays: 7 },
-  express: { id: 'express', label: 'Express Shipping', price: 12.99, minDays: 2, maxDays: 3 },
-  overnight: { id: 'overnight', label: 'Overnight Shipping', price: 29.99, minDays: 1, maxDays: 1 },
+  standard: { id: 'standard', label: 'Flat-Rate Shipping', price: 14, minDays: 3, maxDays: 7 },
 };
 
 const getShippingOption = (id) => SHIPPING_OPTIONS[id] || null;

@@ -13,7 +13,7 @@ import {
   Package,
   Cpu,
 } from "lucide-react";
-import { Pencil } from "lucide-react";
+import { Pencil, Globe } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -332,14 +332,14 @@ export default function Product() {
                 </button>
               </div>
 
-              {/* Trust strip */}
-              <div className="grid sm:grid-cols-2 gap-3 mb-6">
+              {/* Shipping + warranty */}
+              <div className="grid sm:grid-cols-2 gap-3 mb-4">
                 <div className="glass-soft rounded-xl p-4 flex items-start gap-3">
                   <Truck size={18} className="text-neutral-300 mt-0.5 shrink-0" />
                   <div>
-                    <div className="text-[13px] font-medium">US-wide shipping</div>
+                    <div className="text-[13px] font-medium">🇨🇦 🇺🇸 Canada &amp; US shipping</div>
                     <div className="text-[12px] text-neutral-500">
-                      ESD-safe packaging · tracked delivery
+                      $14 CAD flat rate · ESD-safe · tracked
                     </div>
                   </div>
                 </div>
@@ -350,6 +350,20 @@ export default function Product() {
                     <div className="text-[12px] text-neutral-500">
                       Defect-replacement coverage
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* International orders pointer — framed as available, not blocked */}
+              <div className="glass-soft rounded-xl p-4 flex items-start gap-3 mb-6">
+                <Globe size={18} className="text-neutral-300 mt-0.5 shrink-0" />
+                <div>
+                  <div className="text-[13px] font-medium">🌍 Shipping outside Canada &amp; US?</div>
+                  <div className="text-[12px] text-neutral-500">
+                    We ship worldwide as custom orders.{" "}
+                    <Link to="/international" className="text-emerald-400 hover:text-emerald-300 underline">
+                      Read more →
+                    </Link>
                   </div>
                 </div>
               </div>

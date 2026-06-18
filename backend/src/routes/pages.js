@@ -7,7 +7,7 @@ const { sanitizeHtml } = require('../utils/sanitizeHtml');
 
 const router = express.Router();
 
-const VALID_SLUGS = ['shipping', 'returns', 'warranty', 'faq'];
+const VALID_SLUGS = ['shipping', 'returns', 'warranty', 'faq', 'international'];
 
 // ─── GET /api/pages/:slug — public ─────────────────────────────────────────────
 // Returns the stored content for a page, or 204 if none exists yet (the

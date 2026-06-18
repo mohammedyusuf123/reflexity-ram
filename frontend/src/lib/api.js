@@ -141,6 +141,7 @@ export const adminApi = {
 export const pagesApi = {
   get: (slug) => api.get(`/pages/${slug}`),
   save: (slug, data) => api.put(`/pages/${slug}`, data),
+  reset: (slug) => api.delete(`/pages/${slug}`),
 };
 
 export default api;

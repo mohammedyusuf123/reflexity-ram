@@ -74,4 +74,25 @@ router.put(
   }
 );
 
+// ─── DELETE /api/pages/:slug — admin only ──────────────────────────────────────
+// Removes the saved override entirely so the page falls back to its built-in
+// default content. This is the bulletproof "reset" — it wipes any bad saved
+// HTML (e.g. content saved fully bold before the paste fix existed).
+router.delete(
+  '/:slug',
+  authenticate,
+  requireAdmin,
+  [param('slug').isIn(VALID_SLUGS).withMessage('Unknown page')],
+  validate,
+  async (req, res) => {
+    try {
+      await PageContent.deleteOne({ slug: req.params.slug });
+      res.json({ slug: req.params.slug, reset: true });
+    } catch (err) {
+      console.error('Reset page content error:', err);
+      res.status(500).json({ error: 'Failed to reset page' });
+    }
+  }
+);
+
 module.exports = router;

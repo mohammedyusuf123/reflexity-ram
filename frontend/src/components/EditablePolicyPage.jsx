@@ -50,14 +50,22 @@ export default function EditablePolicyPage({ slug, num, label, title, defaultHtm
 
   const cancelEdit = () => setEditing(false);
 
-  // Reset to the built-in default content. Loads the original copy back into
-  // the editor (with proper headings/spacing) so a messy paste can be undone
-  // in one click. The admin still presses Save to make it live.
-  const resetToDefault = () => {
-    if (!window.confirm("Reset this page to the original default content? Your current text will be replaced.")) return;
-    setHtml(defaultHtml);
-    if (editorRef.current) editorRef.current.innerHTML = defaultHtml;
-    toast.success("Reset to default — press Save to publish");
+  // Reset to the built-in default content. Deletes any saved override on the
+  // server (wiping bad content like a fully-bold paste saved before the fix),
+  // then restores the original copy. The page is immediately clean — no Save
+  // needed, because there's no longer a saved version to override the default.
+  const resetToDefault = async () => {
+    if (!window.confirm("Reset this page to the original default content? Any saved edits will be permanently removed.")) return;
+    try {
+      await pagesApi.reset(slug);
+      setHtml(defaultHtml);
+      setPageTitle(title);
+      if (editorRef.current) editorRef.current.innerHTML = defaultHtml;
+      setEditing(false);
+      toast.success("Page reset to default");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to reset");
+    }
   };
 
   const exec = (cmd, value = null) => {
@@ -98,13 +106,22 @@ export default function EditablePolicyPage({ slug, num, label, title, defaultHtm
             <SectionLabel num={num}>{label}</SectionLabel>
             {/* Admin-only edit affordance */}
             {isAdmin && loaded && !editing && (
-              <button
-                onClick={startEdit}
-                className="btn-secondary text-[12px] flex items-center gap-1.5 shrink-0"
-                data-testid="page-edit-btn"
-              >
-                <Pencil size={12} /> Edit
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={resetToDefault}
+                  className="btn-ghost text-[12px] flex items-center gap-1.5 text-neutral-500 hover:text-white"
+                  title="Restore original default content"
+                >
+                  <RotateCcw size={12} /> Reset
+                </button>
+                <button
+                  onClick={startEdit}
+                  className="btn-secondary text-[12px] flex items-center gap-1.5"
+                  data-testid="page-edit-btn"
+                >
+                  <Pencil size={12} /> Edit
+                </button>
+              </div>
             )}
             {isAdmin && editing && (
               <div className="flex items-center gap-2 shrink-0">

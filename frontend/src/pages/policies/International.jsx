@@ -19,8 +19,8 @@ export default function International() {
     <EditablePolicyPage
       slug="international"
       num="03"
-      label="Shipping"
-      title="International orders."
+      label="Policy"
+      title="International orders"
       defaultHtml={DEFAULT_HTML}
       testId="international-page"
     />

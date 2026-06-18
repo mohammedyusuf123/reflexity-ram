@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pencil, Save, X, Loader2, Bold, Italic, List, Heading } from "lucide-react";
+import { Pencil, Save, X, Loader2, Bold, Italic, List, Heading, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -50,9 +50,28 @@ export default function EditablePolicyPage({ slug, num, label, title, defaultHtm
 
   const cancelEdit = () => setEditing(false);
 
+  // Reset to the built-in default content. Loads the original copy back into
+  // the editor (with proper headings/spacing) so a messy paste can be undone
+  // in one click. The admin still presses Save to make it live.
+  const resetToDefault = () => {
+    if (!window.confirm("Reset this page to the original default content? Your current text will be replaced.")) return;
+    setHtml(defaultHtml);
+    if (editorRef.current) editorRef.current.innerHTML = defaultHtml;
+    toast.success("Reset to default — press Save to publish");
+  };
+
   const exec = (cmd, value = null) => {
     document.execCommand(cmd, false, value);
     editorRef.current?.focus();
+  };
+
+  // Paste as plain text — strips font-family/size and other styling that
+  // browsers and Word carry along, which was causing inconsistent fonts and
+  // spacing on saved pages. The toolbar buttons add formatting deliberately.
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+    document.execCommand("insertText", false, text);
   };
 
   const save = async () => {
@@ -89,6 +108,9 @@ export default function EditablePolicyPage({ slug, num, label, title, defaultHtm
             )}
             {isAdmin && editing && (
               <div className="flex items-center gap-2 shrink-0">
+                <button onClick={resetToDefault} className="btn-ghost text-[12px] flex items-center gap-1.5 text-neutral-500 hover:text-white" title="Restore original content">
+                  <RotateCcw size={12} /> Reset
+                </button>
                 <button onClick={cancelEdit} className="btn-ghost text-[12px] flex items-center gap-1.5">
                   <X size={12} /> Cancel
                 </button>
@@ -116,7 +138,8 @@ export default function EditablePolicyPage({ slug, num, label, title, defaultHtm
                 ref={editorRef}
                 contentEditable
                 suppressContentEditableWarning
-                className="policy-content policy-editor min-h-[300px] rounded-xl border border-white/15 bg-white/[0.02] p-5 focus:outline-none focus:border-white/30 text-neutral-300 leading-relaxed text-[14.5px]"
+                onPaste={handlePaste}
+                className="policy-content policy-editor min-h-[300px] max-w-3xl rounded-xl border border-white/15 bg-white/[0.02] p-5 focus:outline-none focus:border-white/30 text-neutral-300 leading-relaxed text-[14.5px]"
                 data-testid="page-editor"
               />
               <p className="text-[11px] text-neutral-600 mt-2">

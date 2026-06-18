@@ -11,6 +11,15 @@ const ALLOWED_TAGS = new Set([
   'a', 'blockquote',
 ]);
 
+// Block-level tags that browsers/Word emit which we convert to <p> so their
+// text stays wrapped (instead of becoming bare unwrapped text that renders
+// inconsistently and loses paragraph spacing — the "squished/wrong font" bug).
+const BLOCK_TO_P = new Set(['div', 'section', 'article', 'header', 'footer', 'main']);
+
+// Inline wrappers we drop entirely while keeping their text inline
+// (span, font carry pasted font-family/size styling we don't want).
+const INLINE_UNWRAP = new Set(['span', 'font', 'small', 'big', 'tt']);
+
 // Per-tag allowed attributes
 const ALLOWED_ATTRS = {
   a: new Set(['href', 'title']),
@@ -27,13 +36,22 @@ function sanitizeHtml(input) {
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<!--[\s\S]*?-->/g, '');
 
-  // 2. Walk tags, keeping only allowlisted ones with safe attributes
+  // 2. Walk tags. Allowlisted tags pass (attributes filtered); block tags map
+  //    to <p>; inline wrappers are unwrapped; everything else is dropped.
   html = html.replace(/<\/?([a-zA-Z0-9]+)([^>]*)>/g, (match, rawTag, rawAttrs) => {
     const tag = rawTag.toLowerCase();
+    const isClosing = match.startsWith('</');
+
+    // Block-level wrappers → paragraph, so content keeps a styled wrapper
+    if (BLOCK_TO_P.has(tag)) return isClosing ? '</p>' : '<p>';
+
+    // Inline wrappers (span/font/etc.) → remove the tag, keep the text
+    if (INLINE_UNWRAP.has(tag)) return '';
+
     if (!ALLOWED_TAGS.has(tag)) return '';
 
     // Closing tag — keep as-is
-    if (match.startsWith('</')) return stripTag(tag);
+    if (isClosing) return stripTag(tag);
 
     // Opening tag — filter attributes
     const allowed = ALLOWED_ATTRS[tag];
@@ -63,6 +81,14 @@ function sanitizeHtml(input) {
 
   // 3. Strip any leftover on* event handler fragments (paranoia)
   html = html.replace(/\son\w+\s*=\s*"[^"]*"/gi, '');
+
+  // 4. Collapse empty/whitespace-only paragraphs left behind by unwrapping
+  //    (e.g. <p><span>…</span></p> → <p></p> after span removal)
+  html = html.replace(/<p>\s*<\/p>/gi, '');
+
+  // 5. Collapse accidental nested paragraphs from block→<p> mapping
+  //    (a <div> inside a <p> would otherwise produce <p><p>…</p></p>)
+  html = html.replace(/<p>\s*<p>/gi, '<p>').replace(/<\/p>\s*<\/p>/gi, '</p>');
 
   return html.trim();
 }

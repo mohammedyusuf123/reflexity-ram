@@ -424,8 +424,8 @@ export default function Product() {
               )}
               {tab === "shipping" && (
                 <div data-testid="product-shipping-content" className="space-y-3 text-[14px] text-neutral-300 leading-relaxed">
-                  <p>Orders ship same-day for items placed before 1pm local time, otherwise within 1 business day.</p>
-                  <p>All modules ship in static-shielded ESD-safe trays inside padded mailers.</p>
+                  <p>Orders typically ship within 1–3 business days of purchase.</p>
+                  <p>Memory modules are packaged appropriately to help protect them during transit. Packaging may include anti-static bags, original manufacturer packaging, original manufacturer boxes, or other suitable protective materials at our discretion.</p>
                   <p>
                     <Link to="/shipping" className="text-white underline underline-offset-4">
                       Full shipping policy →

@@ -14,7 +14,7 @@ const STATS = [
   { label: "Form Factors", value: "4" },
   { label: "Generations", value: "DDR4 · DDR5" },
   { label: "Channels", value: "Wholesale · Retail" },
-  { label: "Status", value: "Demo · WIP" },
+  { label: "Status", value: "Operational" },
 ];
 
 const PRINCIPLES = [
@@ -76,9 +76,9 @@ export default function Home() {
           <div className="container-tight relative pt-24 pb-20 md:pt-32 md:pb-28 text-center">
             {/* Live status pill */}
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 mb-8">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_2px_rgba(251,191,36,0.5)]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_6px_2px_rgba(74,222,128,0.5)]" />
               <span className="text-[11px] font-mono text-neutral-400 tracking-widest uppercase">
-                Demo — Work in Progress
+                Operational
               </span>
             </div>
 

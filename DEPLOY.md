@@ -47,6 +47,14 @@
 1. Push this repo to GitHub (see step 5 below)
 2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
 3. Select the `backend` directory as the root
+> **⚠️ SECURITY — ROTATE THESE CREDENTIALS.** Earlier versions of this file
+> (and of `backend/.env`) contained a **live Resend API key** and **live
+> Cloudinary API key + secret**, committed to git. Treat them as burned:
+> revoke the Resend key and regenerate the Cloudinary secret in their
+> dashboards, then set the new values ONLY in your hosting dashboard
+> (Render/Railway env vars) — never in this repo. Rotation matters more than
+> scrubbing git history: once committed, a key is compromised.
+
 4. Add environment variables from `backend/.env.example`:
    ```
    NODE_ENV=production
@@ -55,10 +63,11 @@
 \1<removed-from-history>nerate a 64-char random string>
    ALLOWED_ORIGINS=https://your-site.pages.dev,https://reflexityram.com
    FRONTEND_URL=https://your-site.pages.dev
-   RESEND_API_KEY=re_REMOVED_FROM_HISTORY
+\1<removed-from-history>r Resend API key>
    FROM_EMAIL=Reflexity RAM <noreply@reflexityram.com>
-   CLOUDINARY_CLOUD_NAME=dfquny0nk
-\1<removed-from-history>NARY_\1<removed-from-history>
+   CLOUDINARY_CLOUD_NAME=<your Cloudinary cloud name>
+\1<removed-from-history>r Cloudinary API key>
+\1<removed-from-history>r Cloudinary API secret>
    STRIPE_SECRET_KEY=sk_live_...
    STRIPE_WEBHOOK_SECRET=whsec_...
    ```

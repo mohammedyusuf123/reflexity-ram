@@ -5,8 +5,8 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { optionalAuth } = require('../middleware/auth');
 const { sendOrderConfirmationEmail } = require('../utils/email');
-const { getShippingOption, toStripeShippingOptions, ALLOWED_SHIPPING_COUNTRIES } = require('../config/shipping');
-const { decrementStockForOrder, restoreStockForOrder } = require('../utils/stock');
+const { toStripeShippingOptions, ALLOWED_SHIPPING_COUNTRIES } = require('../config/shipping');
+const { decrementStockForOrder } = require('../utils/stock');
 const { ensureStripePrice } = require('../utils/stripeSync');
 
 const router = express.Router();
@@ -106,10 +106,25 @@ router.post('/create-checkout-session', optionalAuth, async (req, res) => {
 // Called from BOTH the webhook (checkout.session.completed) and the success
 // page fallback (GET /session-status). The unique index on
 // stripeCheckoutSessionId makes this safe to call any number of times.
+const ensureCriticalFulfillmentEffects = async (order) => {
+  if (!order) return order;
+
+  // Recovery path: if the order row exists but the process crashed before the
+  // stock decrement, a Stripe retry or success-page check must still be able to
+  // complete that critical side effect. decrementStockForOrder is idempotent and
+  // atomically guarded by order.stockDecremented, so this is safe during races.
+  if (order.stockDecremented !== true) {
+    await decrementStockForOrder(order);
+  }
+
+  return order;
+};
+
 const fulfillCheckoutSession = async (checkoutSessionId) => {
-  // Fast path: already fulfilled
+  // Fast path: order already exists. Still verify critical side effects so a
+  // retry can recover if the first process crashed after Order.create().
   const existing = await Order.findOne({ stripeCheckoutSessionId: checkoutSessionId });
-  if (existing) return existing;
+  if (existing) return ensureCriticalFulfillmentEffects(existing);
 
   const session = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
     expand: ['line_items.data.price.product', 'payment_intent'],
@@ -199,8 +214,11 @@ const fulfillCheckoutSession = async (checkoutSessionId) => {
     });
   } catch (createErr) {
     if (createErr.code === 11000) {
-      // Lost the race against the other fulfillment path — reuse its order
-      return Order.findOne({ stripeCheckoutSessionId: session.id });
+      // Lost the race against the other fulfillment path — reuse its order,
+      // but still let this retry recover the stock decrement if the other path
+      // crashed after insert and before side effects.
+      const existingAfterRace = await Order.findOne({ stripeCheckoutSessionId: session.id });
+      return ensureCriticalFulfillmentEffects(existingAfterRace);
     }
     throw createErr;
   }
@@ -267,83 +285,6 @@ router.get('/session-status', async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEGACY: Payment Intent flow (kept for backwards compatibility)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ─── POST /api/stripe/create-payment-intent ────────────────────────────────────
-router.post('/create-payment-intent', optionalAuth, async (req, res) => {
-  try {
-    const { shippingMethod } = req.body; // option ID — price comes from server table
-    const sessionId = req.headers['x-session-id'] || req.cookies?.cartSessionId;
-    const userId = req.user?._id;
-
-    if (!userId && !sessionId) {
-      return res.status(400).json({ error: 'Session ID required for guest checkout' });
-    }
-
-    // SECURITY: never trust a client-supplied shipping cost.
-    const shippingOption = getShippingOption(shippingMethod);
-    if (!shippingOption) {
-      return res.status(400).json({ error: 'Invalid shipping method' });
-    }
-
-    const filter = userId ? { user: userId } : { sessionId };
-    const cart = await Cart.findOne(filter);
-
-    if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ error: 'Cart is empty' });
-    }
-
-    // Recompute prices from the products collection so a stale cart price
-    // can't undercharge (cart prices are refreshed on GET, but not guaranteed here).
-    let subtotal = 0;
-    for (const item of cart.items) {
-      const product = await Product.findOne({ slug: item.slug, isActive: true });
-      if (!product) {
-        return res.status(400).json({ error: `Product "${item.name}" is no longer available` });
-      }
-      subtotal += product.price * item.qty;
-    }
-
-    const shippingCostNum = shippingOption.price;
-    const total = subtotal + shippingCostNum;
-    const amountInCents = Math.round(total * 100);
-
-    if (amountInCents < 50) {
-      return res.status(400).json({ error: 'Order total is too low' });
-    }
-
-    const paymentIntentData = {
-      amount: amountInCents,
-      currency: 'usd',
-      automatic_payment_methods: { enabled: true },
-      metadata: {
-        userId: userId ? userId.toString() : 'guest',
-        sessionId: sessionId || '',
-        shippingMethod: shippingOption.id,
-        itemCount: cart.items.reduce((s, i) => s + i.qty, 0).toString(),
-      },
-    };
-
-    // Attach customer if user has stripeCustomerId
-    if (req.user?.stripeCustomerId) {
-      paymentIntentData.customer = req.user.stripeCustomerId;
-    }
-
-    const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
-
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      amount: amountInCents,
-    });
-  } catch (err) {
-    console.error('Stripe payment intent error:', err);
-    res.status(500).json({ error: 'Failed to create payment intent' });
-  }
-});
-
 // ─── POST /api/stripe/webhook ──────────────────────────────────────────────────
 // Raw body required — configured in server.js before express.json()
 router.post('/webhook', async (req, res) => {
@@ -363,10 +304,12 @@ router.post('/webhook', async (req, res) => {
     return res.status(400).json({ error: `Webhook signature error: ${err.message}` });
   }
 
-  // Respond to Stripe immediately to prevent timeout retries
-  res.json({ received: true });
-
-  // Process event asynchronously
+  // Process the event BEFORE acknowledging. If a handler throws, return 500
+  // so Stripe retries delivery (exponential backoff, up to ~3 days). Acking
+  // first would convert any processing crash into a silently lost order that
+  // Stripe believes was delivered. Fulfillment is a few DB ops + one Stripe
+  // retrieve — well within Stripe's webhook timeout (the confirmation email
+  // inside fulfillCheckoutSession has its own try/catch and can't fail this).
   try {
     switch (event.type) {
 
@@ -392,95 +335,6 @@ router.post('/webhook', async (req, res) => {
       // (stock is only decremented at fulfillment, so abandonment costs nothing)
       case 'checkout.session.expired': {
         console.log(`Checkout session expired: ${event.data.object.id}`);
-        break;
-      }
-
-      // ── Payment succeeded: mark order paid, decrement stock, send email ──────
-      case 'payment_intent.succeeded': {
-        const pi = event.data.object;
-
-        // Idempotent: only transition orders that aren't already paid
-        // (the order-create route may have marked it paid synchronously).
-        const order = await Order.findOneAndUpdate(
-          { stripePaymentIntentId: pi.id, paymentStatus: { $ne: 'paid' } },
-          {
-            paymentStatus: 'paid',
-            status: 'processing',
-            // Store charge ID for refund matching
-            stripeChargeId: pi.latest_charge || undefined,
-            $push: {
-              statusHistory: {
-                status: 'processing',
-                note: 'Payment confirmed by Stripe',
-                timestamp: new Date(),
-              },
-            },
-          },
-          { new: true }
-        ).populate('user', 'email firstName');
-
-        if (order) {
-          console.log(`✅ Payment succeeded for order ${order.orderNumber} (PI: ${pi.id})`);
-
-          // Stock is decremented exactly once per order (guarded flag),
-          // whether this webhook or the order-create route gets there first.
-          await decrementStockForOrder(order);
-
-          // Send order confirmation email now that payment is confirmed
-          const emailAddress = order.user?.email || order.guestEmail;
-          const firstName = order.user?.firstName || order.shippingAddress?.firstName;
-          if (emailAddress) {
-            try {
-              await sendOrderConfirmationEmail({
-                email: emailAddress,
-                firstName,
-                order: {
-                  orderNumber: order.orderNumber,
-                  items: order.items,
-                  subtotal: order.subtotal,
-                  shippingCost: order.shippingCost,
-                  total: order.total,
-                },
-              });
-            } catch (emailErr) {
-              console.error('Order confirmation email failed after webhook:', emailErr.message);
-            }
-          }
-        } else {
-          console.warn(`⚠️  No order found for PI: ${pi.id} — may arrive before order creation`);
-        }
-        break;
-      }
-
-      // ── Payment failed: mark order failed, restore stock ─────────────────────
-      case 'payment_intent.payment_failed': {
-        const pi = event.data.object;
-
-        const order = await Order.findOneAndUpdate(
-          { stripePaymentIntentId: pi.id },
-          {
-            paymentStatus: 'failed',
-            status: 'cancelled',
-            cancelledAt: new Date(),
-            $push: {
-              statusHistory: {
-                status: 'cancelled',
-                note: `Payment failed: ${pi.last_payment_error?.message || 'unknown reason'}`,
-                timestamp: new Date(),
-              },
-            },
-          },
-          { new: true }
-        );
-
-        if (order) {
-          console.log(`❌ Payment failed for order ${order.orderNumber} (PI: ${pi.id})`);
-          // Restore stock only if this order actually decremented it
-          // (stock is now only taken on confirmed payment, so usually a no-op).
-          await restoreStockForOrder(order);
-        } else {
-          console.warn(`⚠️  No order found for failed PI: ${pi.id}`);
-        }
         break;
       }
 
@@ -522,9 +376,11 @@ router.post('/webhook', async (req, res) => {
         // Log unhandled events for debugging but don't error
         console.log(`Unhandled Stripe event: ${event.type}`);
     }
+
+    res.json({ received: true });
   } catch (err) {
-    // Don't re-send response (already sent above), just log
     console.error(`Webhook handler error for event ${event.type}:`, err);
+    res.status(500).json({ error: 'Webhook processing failed' });
   }
 });
 

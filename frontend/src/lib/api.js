@@ -94,12 +94,10 @@ export const ordersApi = {
   list: (params) => api.get('/orders', { params }),
   getByNumber: (orderNumber, email) =>
     api.get(`/orders/${orderNumber}`, { params: email ? { email } : {} }),
-  create: (data) => api.post('/orders/create', data),
 };
 
 // ─── Stripe API ───────────────────────────────────────────────────────────────
 export const stripeApi = {
-  createPaymentIntent: (data) => api.post('/stripe/create-payment-intent', data), // legacy
   createCheckoutSession: () => api.post('/stripe/create-checkout-session'),
   sessionStatus: (sessionId) =>
     api.get('/stripe/session-status', { params: { session_id: sessionId } }),

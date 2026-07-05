@@ -54,6 +54,11 @@ const productSchema = new mongoose.Schema({
   stripePriceId: { type: String },
   // Price the active Stripe Price was created at — lets us detect drift
   stripePriceAmount: { type: Number },
+  // Currency the active Stripe Price was created in. Without this, flipping
+  // STRIPE_CURRENCY (e.g. usd → cad) would leave old-currency Prices active
+  // while shipping options use the new currency — Stripe rejects the
+  // mixed-currency checkout. Tracked so sync recreates the Price on change.
+  stripePriceCurrency: { type: String },
   kit: { type: String }, // e.g. "2 x 16GB"
   speed: { type: Number, required: true }, // in MT/s
   speedLabel: { type: String, required: true },

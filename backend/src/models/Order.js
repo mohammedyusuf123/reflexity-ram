@@ -11,6 +11,11 @@ const orderItemSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   image: { type: String },
   qty: { type: Number, required: true, min: 1 },
+  // How many units were actually taken from stock for this item. Normally
+  // equals qty; can be lower if the item oversold (concurrent buyers of the
+  // last units). Used by restoreStockForOrder so restores are exact.
+  // Legacy orders without this field are treated as decrementedQty = qty.
+  decrementedQty: { type: Number },
 }, { _id: false });
 
 const addressSchema = new mongoose.Schema({

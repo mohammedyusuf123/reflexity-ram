@@ -1,6 +1,11 @@
 const express = require('express');
 const { generateState, buildGoogleAuthUrl, exchangeCodeForTokens, getGoogleUserInfo } = require('../utils/googleOAuth');
 const crypto = require('crypto');
+
+// One-time tokens (email verification, password reset) are stored HASHED.
+// A database leak then exposes only sha256 digests — useless for account
+// takeover — while the raw token lives solely in the email we send.
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 const { body } = require('express-validator');
 const User = require('../models/User');
 const Cart = require('../models/Cart');
@@ -50,7 +55,7 @@ router.post(
         password,
         firstName,
         lastName,
-        emailVerificationToken: verificationToken,
+        emailVerificationToken: hashToken(verificationToken),
         emailVerificationExpires: verificationExpires,
       });
 
@@ -221,7 +226,7 @@ router.post('/verify-email', async (req, res) => {
     if (!token) return res.status(400).json({ error: 'Token required' });
 
     const user = await User.findOne({
-      emailVerificationToken: token,
+      emailVerificationToken: hashToken(token),
       emailVerificationExpires: { $gt: new Date() },
     }).select('+emailVerificationToken +emailVerificationExpires');
 
@@ -252,7 +257,7 @@ router.post('/resend-verification', authenticate, async (req, res) => {
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     await User.findByIdAndUpdate(req.user._id, {
-      emailVerificationToken: verificationToken,
+      emailVerificationToken: hashToken(verificationToken),
       emailVerificationExpires: verificationExpires,
     });
 
@@ -288,7 +293,7 @@ router.post(
       const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
       await User.findByIdAndUpdate(user._id, {
-        passwordResetToken: resetToken,
+        passwordResetToken: hashToken(resetToken),
         passwordResetExpires: resetExpires,
       });
 
@@ -328,7 +333,7 @@ router.post(
       const { token, password } = req.body;
 
       const user = await User.findOne({
-        passwordResetToken: token,
+        passwordResetToken: hashToken(token),
         passwordResetExpires: { $gt: new Date() },
       }).select('+passwordResetToken +passwordResetExpires');
 
@@ -508,7 +513,7 @@ router.get('/google/callback', async (req, res) => {
       avatar: user.avatar || null,
     }));
 
-    res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&user=${userData}`);
+    res.redirect(`${FRONTEND_URL}/auth/callback#token=${token}&user=${userData}`);
   } catch (err) {
     console.error('Google OAuth callback error:', err.message, err);
     fail('server_error');

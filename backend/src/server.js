@@ -28,6 +28,12 @@ if (STRIPE_ENABLED) {
 
 const app = express();
 
+// Render/Railway sit behind one proxy hop. Without this, express-rate-limit
+// keys every visitor to the proxy's IP — meaning ALL users share one rate
+// bucket (20 auth requests / 15 min for the entire site = login lockout for
+// everyone under light traffic). Verified against express-rate-limit v8.
+app.set('trust proxy', 1);
+
 // ─── Security Middleware ───────────────────────────────────────────────────────
 app.use(helmet());
 

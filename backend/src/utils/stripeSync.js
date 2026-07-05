@@ -43,9 +43,13 @@ const ensureStripePrice = async (product) => {
     product.stripeProductId = stripeProduct.id;
   }
 
-  // 2. Ensure the active Price matches the current amount
+  // 2. Ensure the active Price matches the current amount AND currency.
+  // Currency matters: if STRIPE_CURRENCY flips (usd → cad), an old-currency
+  // Price would remain active while shipping options use the new currency,
+  // and Stripe rejects mixed-currency Checkout Sessions.
   const priceChanged = product.stripePriceAmount !== amount;
-  if (!product.stripePriceId || priceChanged) {
+  const currencyChanged = product.stripePriceCurrency !== CURRENCY;
+  if (!product.stripePriceId || priceChanged || currencyChanged) {
     const oldPriceId = product.stripePriceId;
 
     const stripePrice = await stripe.prices.create({
@@ -58,6 +62,7 @@ const ensureStripePrice = async (product) => {
 
     product.stripePriceId = stripePrice.id;
     product.stripePriceAmount = amount;
+    product.stripePriceCurrency = CURRENCY;
 
     // Archive the superseded price (non-fatal if it fails)
     if (oldPriceId) {

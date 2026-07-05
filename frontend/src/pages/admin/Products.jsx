@@ -223,7 +223,6 @@ function ProductModal({ product, onClose, onSave }) {
               </Field>
               <Field label="Generation">
                 <select className="input" value={form.generation} onChange={e => setField('generation', e.target.value)}>
-                  <option>DDR3</option>
                   <option>DDR4</option>
                   <option>DDR5</option>
                 </select>

@@ -166,7 +166,7 @@ const PRODUCTS = [
     slug: 'rfx-d5-32-7200-cl34',
     sku: 'RFX-D5-32-7200-CL34',
     name: '32GB (2x16GB) DDR5-7200 CL34 Premium',
-    line: 'Gaming / Enthusiast',
+    line: 'Desktop',
     generation: 'DDR5',
     formFactor: 'UDIMM',
     capacity: 32,
@@ -211,9 +211,15 @@ async function seed() {
       console.log(`  ✓ Product: ${productData.name}`);
     }
 
-    // Create default admin user if not exists
+    // Create admin user if not exists.
+    // SECURITY: no default password ships in source. The script refuses to
+    // create or reset the admin unless ADMIN_PASSWORD is set (12+ chars) —
+    // same policy as the hardened /api/seed route.
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@reflexityram.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword || adminPassword.length < 12) {
+      console.warn('  ⚠ Skipping admin user: set ADMIN_PASSWORD env var (12+ chars) to seed the admin');
+    } else {
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (!existingAdmin) {
       await User.create({
@@ -230,6 +236,7 @@ async function seed() {
       existingAdmin.role = 'admin';
       await existingAdmin.save();
       console.log(`  ✓ Admin user updated: ${adminEmail}`);
+    }
     }
 
     console.log('\n✅ Seed complete!');

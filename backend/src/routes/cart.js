@@ -92,7 +92,7 @@ router.post(
       if (!product) {
         return res.status(404).json({ error: 'Product not found' });
       }
-      if (product.stock === 'out') {
+      if (product.stock === 'out' || product.stockQuantity <= 0) {
         return res.status(400).json({ error: 'Product is out of stock' });
       }
 
@@ -101,7 +101,7 @@ router.post(
       const existingItem = cart.items.find(i => i.slug === slug);
       if (existingItem) {
         const newQty = existingItem.qty + qty;
-        if (product.stockQuantity > 0 && newQty > product.stockQuantity) {
+        if (newQty > product.stockQuantity) {
           return res.status(400).json({
             error: `Only ${product.stockQuantity} units available`,
           });
@@ -109,6 +109,11 @@ router.post(
         existingItem.qty = newQty;
         existingItem.price = product.price; // Always use current price
       } else {
+        if (qty > product.stockQuantity) {
+          return res.status(400).json({
+            error: `Only ${product.stockQuantity} units available`,
+          });
+        }
         cart.items.push({
           product: product._id,
           slug: product.slug,
@@ -165,7 +170,19 @@ router.patch(
         if (!item) {
           return res.status(404).json({ error: 'Item not in cart' });
         }
+        // Enforce stock on quantity changes (previously unchecked — carts
+        // could hold impossible quantities until checkout rejected them).
+        const product = await Product.findOne({ slug, isActive: true });
+        if (!product) {
+          return res.status(400).json({ error: 'Product is no longer available' });
+        }
+        if (qty > product.stockQuantity) {
+          return res.status(400).json({
+            error: `Only ${product.stockQuantity} units available`,
+          });
+        }
         item.qty = qty;
+        item.price = product.price; // keep cart price current, same as /add
       }
 
       await cart.save();

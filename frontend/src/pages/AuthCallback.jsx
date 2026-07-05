@@ -19,18 +19,22 @@ export default function AuthCallback() {
   const fetchCart = useCartStore((s) => s.fetchCart);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    // Success payload arrives in the URL FRAGMENT (#token=…&user=…) so it
+    // never reaches server/CDN access logs; error codes arrive as a query
+    // param. Query token/user is kept as a fallback for deploy overlap.
+    const query = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     window.history.replaceState({}, '', '/auth/callback');
 
-    const authError = params.get('auth_error');
+    const authError = query.get('auth_error');
     if (authError) {
       toast.error(ERROR_MESSAGES[authError] || 'Authentication failed.');
       navigate('/', { replace: true });
       return;
     }
 
-    const token   = params.get('token');
-    const userRaw = params.get('user');
+    const token   = hash.get('token') || query.get('token');
+    const userRaw = hash.get('user') || query.get('user');
 
     if (!token || !userRaw) {
       toast.error('Authentication failed. Please try again.');

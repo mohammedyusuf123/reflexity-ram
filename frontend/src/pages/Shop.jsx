@@ -5,9 +5,17 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import EmptyState from "@/components/EmptyState";
-import { filterOptions } from "@/lib/data";
 import { productsApi } from "@/lib/api";
 import { useSEO } from "@/lib/seo";
+
+// Instant-render fallback while /products/filters loads (and safety net if
+// it fails). The API response — derived from live products — replaces these.
+const DEFAULT_FILTERS = {
+  generation: ["DDR4", "DDR5"],
+  formFactor: ["UDIMM", "SO-DIMM", "RDIMM", "LRDIMM"],
+  capacity: [8, 16, 32, 64, 128],
+  condition: ["New", "Open Box — Tested", "Refurbished — Tested"],
+};
 
 const SORTS = [
   { value: "featured", label: "Featured" },
@@ -38,6 +46,26 @@ function getCategoryLabel(gen, form, eccOnly) {
 export default function Shop() {
   const [params, setParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
+  const [filterOptions, setFilterOptions] = useState(DEFAULT_FILTERS);
+
+  // Load filter options from the live catalog; keep defaults for any key the
+  // API returns empty (e.g. a fresh database) so the sidebar never goes blank.
+  useEffect(() => {
+    let cancelled = false;
+    productsApi
+      .filters()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setFilterOptions((prev) => ({
+          generation: data.generation?.length ? data.generation : prev.generation,
+          formFactor: data.formFactor?.length ? data.formFactor : prev.formFactor,
+          capacity: data.capacity?.length ? data.capacity : prev.capacity,
+          condition: data.condition?.length ? data.condition : prev.condition,
+        }));
+      })
+      .catch(() => {}); // defaults already rendered
+    return () => { cancelled = true; };
+  }, []);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

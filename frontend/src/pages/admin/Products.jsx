@@ -13,7 +13,7 @@ const EMPTY_PRODUCT = {
   formFactor: 'UDIMM', capacity: 16, speed: 3200, cas: 'CL16', timings: '', voltage: '1.35V',
   condition: 'Used', warranty: '90 Days',
   price: 0, stockQuantity: 0,
-  images: [], description: '',
+  images: [], description: '', rgb: false,
 };
 
 function ImageUploader({ images, onChange }) {
@@ -246,6 +246,12 @@ function ProductModal({ product, onClose, onSave }) {
               </Field>
               <Field label="Voltage">
                 <input className="input" value={form.voltage} onChange={e => setField('voltage', e.target.value)} placeholder="1.35V" />
+              </Field>
+              <Field label="RGB">
+                <select className="input" value={form.rgb ? 'yes' : 'no'} onChange={e => setField('rgb', e.target.value === 'yes')}>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
               </Field>
             </div>
           </div>

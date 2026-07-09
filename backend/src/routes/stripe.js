@@ -8,6 +8,7 @@ const { sendOrderConfirmationEmail } = require('../utils/email');
 const { toStripeShippingOptions, ALLOWED_SHIPPING_COUNTRIES } = require('../config/shipping');
 const { decrementStockForOrder } = require('../utils/stock');
 const { ensureStripePrice } = require('../utils/stripeSync');
+const { isDisposableEmail } = require('../utils/disposableEmail');
 
 const router = express.Router();
 
@@ -210,6 +211,11 @@ const fulfillCheckoutSession = async (checkoutSessionId) => {
       stripeChargeId: typeof pi === 'object' ? pi?.latest_charge || undefined : undefined,
       paymentStatus: 'paid',
       status: 'processing',
+      // Guest emails aren't seen until Stripe hands them back post-payment, so a
+      // disposable address can't be blocked upfront — flag it for manual review.
+      adminNotes: isDisposableEmail(customer.email)
+        ? 'REVIEW: disposable email detected after Stripe Checkout. Confirm before fulfillment.'
+        : undefined,
       statusHistory: [{ status: 'processing', note: 'Payment confirmed via Stripe Checkout' }],
     });
   } catch (createErr) {

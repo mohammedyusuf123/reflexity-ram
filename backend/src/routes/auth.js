@@ -20,6 +20,7 @@ const {
   sendVerificationEmail,
   sendPasswordResetEmail,
 } = require('../utils/email');
+const { assertPermanentEmail } = require('../utils/disposableEmail');
 
 const router = express.Router();
 
@@ -40,6 +41,8 @@ router.post(
   async (req, res) => {
     try {
       const { email, password, firstName, lastName } = req.body;
+
+      assertPermanentEmail(email);
 
       const existing = await User.findOne({ email });
       if (existing) {
@@ -114,6 +117,9 @@ router.post(
         },
       });
     } catch (err) {
+      if (err.code === 'DISPOSABLE_EMAIL_BLOCKED') {
+        return res.status(err.statusCode || 400).json({ error: err.message, code: err.code });
+      }
       console.error('Signup error:', err);
       res.status(500).json({ error: 'Failed to create account' });
     }

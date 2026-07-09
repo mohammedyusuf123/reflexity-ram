@@ -54,9 +54,19 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* BOTTOM: Copyright */}
-      <div className="container-tight pt-6 border-t border-white/5 mono text-[11px] text-neutral-600">
-        <div>© 2026 Reflexity.io — All rights reserved.</div>
+      {/* BOTTOM: Copyright + License */}
+      <div className="container-tight pt-6 border-t border-white/5 mono text-[11px] text-neutral-600 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>© 2026 Reflexity.io Inc.</div>
+        <div>
+          Licensed under the{" "}
+          <a
+            href="/LICENSE.txt"
+            className="text-neutral-400 hover:text-white transition-colors underline underline-offset-4"
+          >
+            Apache License 2.0
+          </a>
+          .
+        </div>
       </div>
     </footer>
   );

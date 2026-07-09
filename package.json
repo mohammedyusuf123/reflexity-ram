@@ -9,9 +9,11 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "cd frontend && npm run build",
     "seed": "cd backend && node src/scripts/seed.js",
-    "install:all": "cd backend && npm install && cd ../frontend && npm install --legacy-peer-deps"
+    "install:all": "cd backend && npm install && cd ../frontend && npm install --legacy-peer-deps",
+    "scan:secrets": "node scripts/scan-secrets.mjs"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
-  }
+  },
+  "license": "Apache-2.0"
 }

@@ -2,11 +2,11 @@ import { useEffect } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// Theme: 'dark' (default) | 'light'
+// Theme: 'light' (default) | 'dark'
 export const useTheme = create(
   persist(
     (set, get) => ({
-      theme: "dark",
+      theme: "light",
       setTheme: (theme) => set({ theme }),
       toggle: () => set({ theme: get().theme === "dark" ? "light" : "dark" }),
     }),

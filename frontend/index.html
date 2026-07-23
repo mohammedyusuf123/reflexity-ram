@@ -3,7 +3,20 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#050505" />
+
+        <!-- Apply saved theme (default: light) before first paint to avoid a flash -->
+        <script>
+            (function () {
+                try {
+                    var t = "light";
+                    var s = localStorage.getItem("reflexity-theme");
+                    if (s) { var p = JSON.parse(s); if (p && p.state && p.state.theme) t = p.state.theme; }
+                    document.documentElement.classList.add(t);
+                } catch (e) { document.documentElement.classList.add("light"); }
+            })();
+        </script>
+
+        <meta name="theme-color" content="#f4f4f6" />
 
         <!-- Google Analytics (GA4) -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-LHK5KZSYG6"></script>

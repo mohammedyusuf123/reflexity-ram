@@ -28,9 +28,9 @@ const PRINCIPLES = [
 
 export default function Home() {
   useSEO({
-    title: "Reflexity RAM — Tested DDR4 & DDR5 Memory",
+    title: "Tested DDR4 & DDR5 RAM in Canada",
     description:
-      "Reflexity RAM — DDR4, DDR5, server, and laptop memory. Wholesale and retail with direct communication.",
+      "Shop tested DDR4 and DDR5 memory for desktops, laptops, and servers. Clear compatibility details, warranty coverage, and shipping from Toronto.",
   });
   const [copied, setCopied] = useState(false);
 
@@ -84,13 +84,7 @@ export default function Home() {
 
             {/* Main title */}
             <h1
-              className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-none"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #a0a8c0 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
+              className="display-grad text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-none"
             >
               Reflexity RAM
             </h1>
@@ -147,10 +141,10 @@ export default function Home() {
             </div>
             <div className="space-y-4 text-neutral-400 text-[15px] leading-relaxed">
               <p>
-                Reflexity RAM is a focused memory operation. We stock DDR4 and
-                DDR5 — desktop, laptop, and server — and sell it through a
-                straightforward storefront. No gimmicks, no upsells. Specs,
-                prices, and a real email address.
+                We specialize exclusively in computer memory. We stock DDR4 and
+                DDR5 — desktop, laptop, and server — and every used module is
+                inspected and tested before it's listed. No gimmicks, no
+                upsells. Just specs, prices, and a real email address.
               </p>
               <p>
                 We handle both wholesale and retail. Small orders ship like

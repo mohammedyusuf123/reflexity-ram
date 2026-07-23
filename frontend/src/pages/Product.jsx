@@ -332,6 +332,15 @@ export default function Product() {
                 </button>
               </div>
 
+              {/* Trust strip — quick reassurance at the point of decision */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-4 text-[12px] text-neutral-600 dark:text-neutral-400">
+                {["Individually tested", `${p.warranty} warranty`, "Ships from Toronto", "Secure checkout"].map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1.5">
+                    <span className="text-emerald-600 dark:text-emerald-400">✓</span> {t}
+                  </span>
+                ))}
+              </div>
+
               {/* Shipping + warranty */}
               <div className="grid sm:grid-cols-2 gap-3 mb-4">
                 <div className="glass-soft rounded-xl p-4 flex items-start gap-3">

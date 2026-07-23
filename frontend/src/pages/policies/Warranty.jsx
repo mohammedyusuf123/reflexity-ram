@@ -2,7 +2,7 @@ import EditablePolicyPage from "@/components/EditablePolicyPage";
 
 // Default content below is the built-in copy. Admins can override it inline via
 // the Edit button (persisted server-side); this stays as the fallback.
-const DEFAULT_HTML = `<p>Reflexity RAM aims to provide reliable, properly tested memory products backed by reasonable support coverage.</p>
+const DEFAULT_HTML = `<p>Reflexity RAM provides reliable, individually tested memory backed by clear, straightforward warranty support.</p>
 <h2>Coverage</h2>
 <p>Warranty coverage may vary depending on the specific product, condition, and manufacturer warranty status.</p>
 <p>Where applicable, warranty details will be listed directly on the product page.</p>

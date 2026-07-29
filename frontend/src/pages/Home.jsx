@@ -1,223 +1,133 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Mail, Copy, Check } from "lucide-react";
-import { toast } from "sonner";
+import { Server, Laptop, Monitor, ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ProductCard from "@/components/ProductCard";
 import { useSEO } from "@/lib/seo";
+import { useStock } from "@/lib/useStock";
 
-const SUPPORT_EMAIL = "reflexityram@gmail.com";
-const GMAIL_COMPOSE_URL =
-  "https://mail.google.com/mail/u/0/?fs=1&to=reflexityram@gmail.com&su=Reflexity+RAM+%E2%80%94+Inquiry&tf=cm";
-
-const STATS = [
-  { label: "Form Factors", value: "4" },
-  { label: "Generations", value: "DDR4 · DDR5" },
-  { label: "Channels", value: "Wholesale · Retail" },
-  { label: "Status", value: "Operational" },
-];
-
-const PRINCIPLES = [
-  { title: "Direct communication", body: "Email us with questions. We respond the same business day." },
-  { title: "Clear specifications", body: "Every listing includes full specs, compatibility notes, and condition." },
-  { title: "Tested inventory", body: "All modules are verified before dispatch." },
-  { title: "Fast dispatch", body: "Orders are processed quickly and ship with tracking." },
-  { title: "Wholesale available", body: "Bulk orders welcome. Contact us directly for pricing." },
-  { title: "Server pulls available", body: "RDIMM and LRDIMM server memory in stock. ECC verified." },
+/**
+ * Storefront home — "What are you building?".
+ * Server memory gets the wide, primary tile since it is the main stock;
+ * laptop and desktop sit beside it. Featured stock sits underneath.
+ */
+const LANES = [
+  {
+    icon: Server,
+    title: "Server memory",
+    sub: "RDIMM · LRDIMM · ECC",
+    body: "Registered DDR4 server pulls, tested and ECC-verified.",
+    to: "/shop?line=Server",
+    primary: true,
+  },
+  {
+    icon: Laptop,
+    title: "Laptop",
+    sub: "SO-DIMM",
+    body: "DDR4 and DDR5 laptop sticks.",
+    to: "/shop?formFactor=SO-DIMM",
+  },
+  {
+    icon: Monitor,
+    title: "Desktop",
+    sub: "UDIMM",
+    body: "Standard desktop memory.",
+    to: "/shop?formFactor=UDIMM",
+  },
 ];
 
 export default function Home() {
   useSEO({
-    title: "Tested DDR4 & DDR5 RAM in Canada",
+    title: "Server & Laptop RAM in Canada — Tested DDR4 & DDR5",
     description:
-      "Shop tested DDR4 and DDR5 memory for desktops, laptops, and servers. Clear compatibility details, warranty coverage, and shipping from Toronto.",
+      "Pick your build: server RDIMM/LRDIMM, laptop SO-DIMM, or desktop UDIMM. Tested memory shipped from Toronto.",
   });
-  const [copied, setCopied] = useState(false);
-
-  const copyEmail = async () => {
-    try {
-      await navigator.clipboard.writeText(SUPPORT_EMAIL);
-    } catch {
-      const t = document.createElement("textarea");
-      t.value = SUPPORT_EMAIL;
-      document.body.appendChild(t);
-      t.select();
-      document.execCommand("copy");
-      document.body.removeChild(t);
-    }
-    setCopied(true);
-    toast.success("Email copied", {
-      description: SUPPORT_EMAIL,
-      icon: <Check size={16} className="text-emerald-400" />,
-    });
-    setTimeout(() => setCopied(false), 2200);
-  };
+  const { loading, products } = useStock(6);
 
   return (
     <>
       <Header />
       <main className="page" data-testid="home-page">
-
-        {/* ── HERO ─────────────────────────────────────────────── */}
-        <section
-          className="relative overflow-hidden border-b border-white/5"
-          data-testid="hero-section"
-        >
-          {/* Ambient glow layers */}
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(120,130,255,0.10) 0%, transparent 70%), " +
-                "radial-gradient(ellipse 60% 40% at 80% 80%, rgba(80,180,255,0.06) 0%, transparent 60%)",
-            }}
-          />
-
-          <div className="container-tight relative pt-24 pb-20 md:pt-32 md:pb-28 text-center">
-            {/* Live status pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 mb-8">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_6px_2px_rgba(74,222,128,0.5)]" />
-              <span className="text-[11px] font-mono text-neutral-400 tracking-widest uppercase">
-                Operational
-              </span>
+        <section className="border-b" style={{ borderColor: "var(--border)" }}>
+          <div className="container-tight pt-14 pb-12">
+            <div className="section-label mb-5">
+              <span className="num">01</span> WHAT ARE YOU BUILDING?
             </div>
-
-            {/* Main title */}
-            <h1
-              className="display-grad text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-none"
-            >
-              Reflexity RAM
+            <h1 className="display-2 max-w-[17ch] mb-9">
+              Memory that's been <span className="hl">tested first.</span>
             </h1>
 
-            <p className="mt-5 text-[17px] text-neutral-400 max-w-lg mx-auto leading-relaxed">
-              Tested DDR4, DDR5, laptop, and server memory.
-            </p>
-
-            {/* CTA */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/categories"
-                className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-[14px] transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_0_20px_4px_rgba(255,255,255,0.08)]"
-                data-testid="hero-shop-cta"
-              >
-                Shop RAM <ArrowRight size={15} />
-              </Link>
-              <a
-                href={GMAIL_COMPOSE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary inline-flex items-center gap-2 px-5 py-3 text-[14px] transition-all duration-200 hover:scale-[1.02]"
-              >
-                <Mail size={14} /> Contact us
-              </a>
-            </div>
-
-            {/* Stat strip */}
-            <div className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-px border border-white/8 rounded-2xl overflow-hidden max-w-2xl mx-auto">
-              {STATS.map((s, i) => (
-                <div
-                  key={s.label}
-                  className="flex flex-col items-center justify-center gap-1.5 py-5 px-4 bg-white/[0.025] hover:bg-white/[0.045] transition-colors duration-200"
-                  data-testid={`hero-stat-${s.label.toLowerCase().replace(/\s+/g, "-")}`}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {LANES.map(({ icon: Icon, title, sub, body, to, primary }) => (
+                <Link
+                  key={title}
+                  to={to}
+                  className="glass card-hover rounded-xl p-6 flex flex-col"
+                  style={{
+                    textDecoration: "none",
+                    gridColumn: primary ? "span 2" : undefined,
+                    borderTop: primary ? "3px solid var(--brand-yellow)" : undefined,
+                  }}
                 >
-                  <div className="text-[10px] font-mono text-neutral-500 tracking-widest uppercase">
-                    {s.label}
+                  <Icon
+                    size={primary ? 30 : 24}
+                    style={{ color: primary ? "var(--brand-yellow-deep)" : "var(--fg-muted)" }}
+                  />
+                  <div className="mt-4 font-semibold" style={{ fontSize: primary ? 21 : 17 }}>
+                    {title}
                   </div>
-                  <div className="text-[13px] font-medium text-neutral-200">
-                    {s.value}
+                  <div className="mono text-[11px] mt-1" style={{ color: "var(--fg-faint)" }}>
+                    {sub}
                   </div>
-                </div>
+                  <p className="text-[14px] mt-3 flex-1" style={{ color: "var(--fg-muted)" }}>
+                    {body}
+                  </p>
+                  <span
+                    className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-medium"
+                    style={{ color: "var(--fg)" }}
+                  >
+                    Browse <ArrowRight size={14} />
+                  </span>
+                </Link>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── ABOUT ────────────────────────────────────────────── */}
-        <section className="border-b border-white/5" data-testid="about-section">
-          <div className="container-tight py-16 md:py-20 grid lg:grid-cols-2 gap-10 items-start">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight mb-1">About</h2>
-              <div className="h-px w-8 bg-white/20 mt-3 mb-6" />
+        <section>
+          <div className="container-tight pt-16 pb-14">
+            <div className="section-label mb-6">
+              <span className="num">02</span> FEATURED STOCK
             </div>
-            <div className="space-y-4 text-neutral-400 text-[15px] leading-relaxed">
-              <p>
-                We specialize exclusively in computer memory. We stock DDR4 and
-                DDR5 — desktop, laptop, and server — and every used module is
-                inspected and tested before it's listed. No gimmicks, no
-                upsells. Just specs, prices, and a real email address.
+            {loading ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="skeleton" style={{ height: 320 }} />
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              <p style={{ color: "var(--fg-muted)" }}>
+                Nothing listed right now — <Link to="/support" className="underline">email us</Link> for current stock.
               </p>
-              <p>
-                We handle both wholesale and retail. Small orders ship like
-                standard e-commerce. Bulk inquiries are handled directly. Tell
-                us the SKU you need and we'll source it.
-              </p>
-            </div>
-          </div>
-        </section>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {products.map((p, i) => (
+                  <ProductCard key={p._id} p={p} index={i} />
+                ))}
+              </div>
+            )}
 
-        {/* ── HOW WE OPERATE ───────────────────────────────────── */}
-        <section className="border-b border-white/5" data-testid="principles-section">
-          <div className="container-tight py-16 md:py-20">
-            <h2 className="text-2xl font-semibold tracking-tight mb-8">
-              How we operate
-            </h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {PRINCIPLES.map((p) => (
-                <div
-                  key={p.title}
-                  className="group border border-white/8 rounded-xl p-6 hover:border-white/18 hover:bg-white/[0.025] transition-all duration-200"
-                >
-                  <div className="text-[13.5px] font-semibold mb-2 group-hover:text-white transition-colors duration-200">
-                    {p.title}
-                  </div>
-                  <div className="text-[13px] text-neutral-500 leading-relaxed">
-                    {p.body}
-                  </div>
+            <div className="callout-brand mt-14 rounded-xl px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="callout-title font-semibold">Buying in volume?</div>
+                <div className="callout-body text-[14px]">
+                  We do wholesale on server pulls — tell us the SKU and quantity.
                 </div>
-              ))}
+              </div>
+              <Link to="/wholesale" className="btn-primary">Get bulk pricing</Link>
             </div>
           </div>
         </section>
-
-        {/* ── CONTACT ──────────────────────────────────────────── */}
-        <section data-testid="contact-section">
-          <div className="container-tight py-16 md:py-20">
-            <h2 className="text-2xl font-semibold tracking-tight mb-2">
-              Contact
-            </h2>
-            <p className="text-neutral-400 text-[14px] mb-8">
-              Email is the fastest way to reach us. We answer same business day.
-            </p>
-            <div className="border border-white/8 rounded-xl p-8 hover:border-white/14 transition-colors duration-300">
-              <div
-                className="text-xl md:text-2xl font-mono font-medium break-all mb-6 text-neutral-100"
-                data-testid="contact-email-display"
-              >
-                {SUPPORT_EMAIL}
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={copyEmail}
-                  className="btn-secondary transition-all duration-200 hover:scale-[1.02]"
-                  data-testid="home-copy-email-btn"
-                >
-                  {copied ? <Check size={15} /> : <Copy size={15} />}
-                  {copied ? "Copied" : "Copy email"}
-                </button>
-                <a
-                  href={GMAIL_COMPOSE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary transition-all duration-200 hover:scale-[1.02]"
-                  data-testid="home-send-email-btn"
-                >
-                  <Mail size={15} /> Send via Gmail
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
       </main>
       <Footer />
     </>

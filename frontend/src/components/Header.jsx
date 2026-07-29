@@ -57,13 +57,14 @@ export default function Header() {
             className="flex items-center gap-3 shrink-0 mr-8"
             data-testid="header-logo-link"
           >
-            <ReflexityMark size={28} />
+            <ReflexityMark size={22} />
             <div className="leading-tight">
-              <div className="font-semibold tracking-tight text-[14px] text-white">
-                Reflexity RAM
+              <div className="brand-wordmark text-[15px]">
+                reflexity<span className="brand-dot">.</span>
+                <span className="brand-sub">RAM</span>
               </div>
-              <div className="font-mono text-[10px] text-neutral-500 hidden sm:block">
-                by Reflexity.io
+              <div className="brand-eyebrow hidden sm:block">
+                by reflexity.io
               </div>
             </div>
           </Link>

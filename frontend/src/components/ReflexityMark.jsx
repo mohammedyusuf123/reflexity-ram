@@ -1,18 +1,25 @@
-export default function ReflexityMark({ size = 28 }) {
+/**
+ * Reflexity brand mark — two interlocking rings.
+ * Geometry recovered from the reflexity.io favicon: two 324° arcs,
+ * centre-line radius 46.5, stroke 10, centres 55 apart.
+ */
+export default function ReflexityMark({ size = 28, color = "#FFCF24", className = "" }) {
+  const ratio = 160 / 104;
   return (
     <svg
-      width={size}
+      width={size * ratio}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 160 104"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className={className}
       data-testid="reflexity-mark"
+      aria-hidden="true"
     >
-      <rect width="64" height="64" rx="14" fill="#0e0e12" stroke="#26262c" />
-      <path
-        d="M19 47V17h13.5c5.8 0 10 3.7 10 9.4 0 4.2-2.4 7.3-6.2 8.6L44 47h-7.1l-6.7-10.6h-4.8V47H19zm6.4-16.4h6.7c2.9 0 4.7-1.5 4.7-4.1 0-2.6-1.8-4.1-4.7-4.1h-6.7v8.2z"
-        fill="#f5f5f7"
-      />
+      <g fill="none" stroke={color} strokeWidth="10" strokeLinecap="round">
+        <path d="M 98.05 45.03 A 46.5 46.5 0 1 1 86.01 19.79" />
+        <path d="M 61.07 58.77 A 46.5 46.5 0 1 1 74.12 84.38" />
+      </g>
     </svg>
   );
 }

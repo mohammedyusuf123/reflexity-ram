@@ -9,6 +9,7 @@ import useAuthStore from "@/lib/authStore";
 
 // Public pages
 import Home from "@/pages/Home";
+import Wholesale from "@/pages/Wholesale";
 import Shop from "@/pages/Shop";
 import Product from "@/pages/Product";
 import Cart from "@/pages/Cart";
@@ -65,6 +66,7 @@ export default function App() {
         <Routes>
           {/* Store */}
           <Route path="/" element={<Home />} />
+          <Route path="/wholesale" element={<Wholesale />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/shop/:slug" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
@@ -108,7 +110,7 @@ export default function App() {
               backdropFilter: "blur(14px)",
               border: "1px solid rgba(255,255,255,0.08)",
               color: "#f5f5f7",
-              fontFamily: "Figtree, sans-serif",
+              fontFamily: "Instrument Sans, sans-serif",
             },
             className: "reflexity-toast",
           }}

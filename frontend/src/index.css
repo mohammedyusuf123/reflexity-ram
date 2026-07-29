@@ -5,41 +5,54 @@
 /* ============================================================
    THEME TOKENS — dark by default, override in .light
    ============================================================ */
+/* ============================================================
+   REFLEXITY BRAND TOKENS
+   Palette lifted from reflexity.io:
+     ink #17181A · ink-soft #55585E · ink-muted #A6A8AD
+     yellow #FFCF24 · yellow-deep #E5B400 · on-yellow #5C4A00
+     base #FAFAF7 · paper #FFFFFF · alt #F4F4F0
+   ============================================================ */
 :root {
-    /* Surfaces */
-    --bg: #050505;
-    --bg-elev: #0a0a0c;
-    --glass-bg: rgba(18, 18, 22, 0.65);
-    --glass-bg-hover: rgba(22, 22, 26, 0.8);
-    --glass-bg-soft: rgba(14, 14, 18, 0.5);
-    --header-bg: rgba(5, 5, 5, 0.7);
-    --grain-opacity: 0.5;
+    --brand-yellow: #ffcf24;
+    --brand-yellow-deep: #e5b400;
+    --brand-yellow-tint: #fff6d6;
+    --brand-on-yellow: #5c4a00;
+    --brand-ink: #17181a;
+
+    /* Surfaces — true dark, warmed very slightly toward the brand ink */
+    --bg: #08090a;
+    --bg-elev: #101113;
+    --glass-bg: rgba(16, 17, 19, 0.72);
+    --glass-bg-hover: rgba(22, 23, 26, 0.85);
+    --glass-bg-soft: rgba(13, 14, 16, 0.55);
+    --header-bg: rgba(8, 9, 10, 0.8);
+    --grain-opacity: 0.4;
 
     /* Borders */
-    --border: rgba(255, 255, 255, 0.06);
-    --border-strong: rgba(255, 255, 255, 0.14);
-    --border-hover: rgba(255, 255, 255, 0.18);
+    --border: rgba(255, 255, 255, 0.07);
+    --border-strong: rgba(255, 255, 255, 0.15);
+    --border-hover: rgba(255, 207, 36, 0.45);
 
     /* Text */
-    --fg: #f5f5f7;
+    --fg: #f2f2ee;
     --fg-strong: #ffffff;
-    --fg-muted: #9a9aa3;
-    --fg-faint: #5a5a64;
-    --fg-dim: #7a7a82;
-    --fg-on-primary: #050505;
+    --fg-muted: #a6a8ad;
+    --fg-faint: #6b6d73;
+    --fg-dim: #85878d;
+    --fg-on-primary: #17181a;
 
     /* Inputs */
-    --input-bg: rgba(20, 20, 24, 0.7);
-    --input-bg-focus: rgba(24, 24, 28, 0.9);
-    --input-border: rgba(255, 255, 255, 0.08);
-    --input-border-focus: rgba(255, 255, 255, 0.3);
-    --placeholder: #5a5a64;
+    --input-bg: rgba(255, 255, 255, 0.04);
+    --input-bg-focus: rgba(255, 255, 255, 0.07);
+    --input-border: rgba(255, 255, 255, 0.1);
+    --input-border-focus: var(--brand-yellow);
+    --placeholder: #6b6d73;
 
-    /* Buttons */
-    --btn-primary-bg: #f5f5f7;
-    --btn-primary-bg-hover: #ffffff;
-    --btn-primary-fg: #050505;
-    --btn-primary-shadow: rgba(255, 255, 255, 0.25);
+    /* Buttons — brand yellow is the primary action */
+    --btn-primary-bg: #ffcf24;
+    --btn-primary-bg-hover: #e5b400;
+    --btn-primary-fg: #17181a;
+    --btn-primary-shadow: rgba(229, 180, 0, 0.45);
     --btn-secondary-border: rgba(255, 255, 255, 0.14);
     --btn-secondary-border-hover: rgba(255, 255, 255, 0.3);
     --btn-secondary-bg-hover: rgba(255, 255, 255, 0.05);
@@ -52,28 +65,28 @@
     --pill-fg: #c5c5cc;
 
     /* Selection */
-    --selection-bg: #f5f5f7;
-    --selection-fg: #050505;
+    --selection-bg: #ffcf24;
+    --selection-fg: #17181a;
 
     /* Display heading gradient */
     --display-grad-0: #ffffff;
-    --display-grad-1: #c5c5cc;
-    --display-grad-2: #8a8a92;
+    --display-grad-1: #e8e8e2;
+    --display-grad-2: #a6a8ad;
 
     /* Hero / glow */
-    --hero-glow-a: rgba(120, 140, 255, 0.07);
-    --hero-glow-b: rgba(255, 255, 255, 0.04);
+    --hero-glow-a: rgba(255, 207, 36, 0.14);
+    --hero-glow-b: rgba(255, 255, 255, 0.03);
 
     /* Scrollbar */
-    --scrollbar-track: #0a0a0c;
-    --scrollbar-thumb: #2a2a30;
-    --scrollbar-thumb-hover: #3a3a42;
+    --scrollbar-track: #101113;
+    --scrollbar-thumb: #2b2c30;
+    --scrollbar-thumb-hover: var(--brand-yellow-deep);
 
     /* Tab pill */
-    --tab-fg: #9a9aa3;
-    --tab-fg-active: #ffffff;
-    --tab-bg-active: rgba(255, 255, 255, 0.06);
-    --tab-border-active: rgba(255, 255, 255, 0.12);
+    --tab-fg: #a6a8ad;
+    --tab-fg-active: #17181a;
+    --tab-bg-active: var(--brand-yellow);
+    --tab-border-active: var(--brand-yellow);
 
     /* Skeleton */
     --skel-a: rgba(255, 255, 255, 0.03);
@@ -108,35 +121,35 @@
 }
 
 html.light {
-    --bg: #f4f4f6;
+    --bg: #fafaf7;
     --bg-elev: #ffffff;
-    --glass-bg: rgba(255, 255, 255, 0.72);
-    --glass-bg-hover: rgba(255, 255, 255, 0.92);
-    --glass-bg-soft: rgba(255, 255, 255, 0.55);
-    --header-bg: rgba(244, 244, 246, 0.72);
-    --grain-opacity: 0.18;
+    --glass-bg: rgba(255, 255, 255, 0.78);
+    --glass-bg-hover: rgba(255, 255, 255, 0.95);
+    --glass-bg-soft: rgba(255, 255, 255, 0.6);
+    --header-bg: rgba(250, 250, 247, 0.88);
+    --grain-opacity: 0.12;
 
-    --border: rgba(15, 15, 20, 0.08);
-    --border-strong: rgba(15, 15, 20, 0.14);
-    --border-hover: rgba(15, 15, 20, 0.22);
+    --border: #e4e4df;
+    --border-strong: rgba(23, 24, 26, 0.16);
+    --border-hover: var(--brand-yellow-deep);
 
-    --fg: #0a0a0c;
-    --fg-strong: #050505;
-    --fg-muted: #5b5b66;
-    --fg-faint: #9a9aa3;
-    --fg-dim: #7a7a82;
-    --fg-on-primary: #ffffff;
+    --fg: #17181a;
+    --fg-strong: #17181a;
+    --fg-muted: #55585e;
+    --fg-faint: #a6a8ad;
+    --fg-dim: #55585e;
+    --fg-on-primary: #17181a;
 
-    --input-bg: rgba(255, 255, 255, 0.9);
+    --input-bg: #fafaf7;
     --input-bg-focus: #ffffff;
-    --input-border: rgba(15, 15, 20, 0.12);
-    --input-border-focus: rgba(15, 15, 20, 0.45);
-    --placeholder: #8a8a92;
+    --input-border: #e4e4df;
+    --input-border-focus: #17181a;
+    --placeholder: #9a9ca2;
 
-    --btn-primary-bg: #0a0a0c;
-    --btn-primary-bg-hover: #1a1a1f;
-    --btn-primary-fg: #ffffff;
-    --btn-primary-shadow: rgba(15, 15, 20, 0.18);
+    --btn-primary-bg: #ffcf24;
+    --btn-primary-bg-hover: #e5b400;
+    --btn-primary-fg: #17181a;
+    --btn-primary-shadow: rgba(229, 180, 0, 0.35);
     --btn-secondary-border: rgba(15, 15, 20, 0.14);
     --btn-secondary-border-hover: rgba(15, 15, 20, 0.32);
     --btn-secondary-bg-hover: rgba(15, 15, 20, 0.04);
@@ -147,24 +160,24 @@ html.light {
     --pill-border: rgba(15, 15, 20, 0.1);
     --pill-fg: #3a3a42;
 
-    --selection-bg: #0a0a0c;
-    --selection-fg: #ffffff;
+    --selection-bg: #ffcf24;
+    --selection-fg: #17181a;
 
-    --display-grad-0: #0a0a0c;
-    --display-grad-1: #2a2a32;
-    --display-grad-2: #5b5b66;
+    --display-grad-0: #17181a;
+    --display-grad-1: #2a2b2f;
+    --display-grad-2: #55585e;
 
-    --hero-glow-a: rgba(120, 140, 255, 0.12);
-    --hero-glow-b: rgba(15, 15, 20, 0.05);
+    --hero-glow-a: rgba(255, 207, 36, 0.18);
+    --hero-glow-b: rgba(23, 24, 26, 0.04);
 
-    --scrollbar-track: #ececef;
-    --scrollbar-thumb: #c5c5cc;
-    --scrollbar-thumb-hover: #a0a0a8;
+    --scrollbar-track: #f4f4f0;
+    --scrollbar-thumb: #d5d5cf;
+    --scrollbar-thumb-hover: #b5b5ae;
 
-    --tab-fg: #5b5b66;
-    --tab-fg-active: #050505;
-    --tab-bg-active: rgba(15, 15, 20, 0.06);
-    --tab-border-active: rgba(15, 15, 20, 0.14);
+    --tab-fg: #55585e;
+    --tab-fg-active: #17181a;
+    --tab-bg-active: var(--brand-yellow);
+    --tab-border-active: var(--brand-yellow);
 
     --skel-a: rgba(15, 15, 20, 0.04);
     --skel-b: rgba(15, 15, 20, 0.1);
@@ -185,7 +198,7 @@ body {
     padding: 0;
     background-color: var(--bg);
     color: var(--fg);
-    font-family: "Figtree", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: "Instrument Sans", -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "ss01", "cv11";
@@ -206,8 +219,74 @@ body::before {
 }
 
 .mono {
-    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
     letter-spacing: 0.04em;
+}
+
+/* ─── Reflexity brand lockup ──────────────────────────────── */
+.brand-wordmark {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--fg-strong);
+}
+.brand-dot {
+    color: var(--brand-yellow-deep);
+}
+.brand-sub {
+    margin-left: 0.4em;
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 500;
+    font-size: 0.72em;
+    letter-spacing: 0.1em;
+    color: var(--fg-muted);
+}
+.brand-eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fg-faint);
+}
+
+/* Brand callout box — cream on light, translucent amber on dark so it reads
+   as an accent panel rather than a bright slab. */
+.callout-brand {
+    background: rgba(255, 207, 36, 0.07);
+    border: 1px solid rgba(255, 207, 36, 0.28);
+}
+.callout-brand .callout-title {
+    color: var(--brand-yellow);
+}
+.callout-brand .callout-body {
+    color: var(--fg-muted);
+}
+html.light .callout-brand {
+    background: var(--brand-yellow-tint);
+    border-color: var(--brand-yellow-deep);
+}
+html.light .callout-brand .callout-title,
+html.light .callout-brand .callout-body {
+    color: var(--brand-on-yellow);
+}
+
+/* Marker-highlight behind headline text, as on reflexity.io */
+.hl {
+    position: relative;
+    white-space: nowrap;
+    z-index: 0;
+}
+.hl::after {
+    content: "";
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    bottom: 4px;
+    height: 0.34em;
+    background: var(--brand-yellow);
+    z-index: -1;
+    border-radius: 3px;
+    transform: rotate(-1.2deg);
 }
 
 /* Gradient display heading */
@@ -261,7 +340,7 @@ body::before {
     align-items: center;
     gap: 0.4rem;
     padding: 0.3rem 0.7rem;
-    font-family: "JetBrains Mono", monospace;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -280,12 +359,14 @@ html.dark .pill-accent {
     color: #9fe5ae;
 }
 .pill-amber {
-    border-color: rgba(200, 140, 30, 0.3);
-    background: rgba(230, 180, 80, 0.08);
-    color: #a06c00;
+    border-color: var(--brand-yellow-deep);
+    background: var(--brand-yellow-tint);
+    color: var(--brand-on-yellow);
 }
-html.dark .pill-amber {
-    color: #f3c47a;
+html:not(.light) .pill-amber {
+    border-color: rgba(255, 207, 36, 0.4);
+    background: rgba(255, 207, 36, 0.12);
+    color: var(--brand-yellow);
 }
 .pill-blue {
     border-color: rgba(80, 130, 220, 0.3);
@@ -405,14 +486,24 @@ html.dark .pill-blue {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    font-family: "JetBrains Mono", monospace;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 0.72rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--fg-dim);
 }
 .section-label .num {
-    color: var(--fg);
+    color: var(--brand-yellow-deep);
+    font-weight: 500;
+}
+/* Yellow dash before an eyebrow label, as on reflexity.io */
+.section-label::before {
+    content: "";
+    width: 20px;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--brand-yellow);
+    flex-shrink: 0;
 }
 
 /* Animations */
@@ -486,14 +577,19 @@ html.dark .pill-blue {
     color: var(--selection-fg);
 }
 
+/* Horizontal padding only — using the `padding` shorthand here would reset
+   padding-top/bottom and silently kill every `container-tight py-*` on the
+   site, since this rule is emitted after Tailwind's utilities. */
 .container-tight {
     max-width: 1240px;
     margin: 0 auto;
-    padding: 0 1.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
 }
 @media (min-width: 768px) {
     .container-tight {
-        padding: 0 2rem;
+        padding-left: 2rem;
+        padding-right: 2rem;
     }
 }
 
@@ -517,16 +613,37 @@ html.dark .pill-blue {
     color: var(--tab-fg-active);
 }
 
-/* Card hover */
+/* Card hover — yellow edge + lift */
 .card-hover {
     transition:
         transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
         border-color 0.4s ease,
+        box-shadow 0.4s ease,
         background 0.4s ease;
 }
 .card-hover:hover {
     transform: translateY(-4px);
     border-color: var(--border-hover);
+    box-shadow: 0 12px 30px -18px var(--btn-primary-shadow);
+}
+
+/* Section headings get a short yellow underline */
+.display-2::after,
+.display-3::after {
+    content: "";
+    display: block;
+    width: 34px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--brand-yellow);
+    margin-top: 0.55rem;
+}
+
+/* Focus ring in brand yellow */
+:focus-visible {
+    outline: 3px solid var(--brand-yellow-deep);
+    outline-offset: 3px;
+    border-radius: 4px;
 }
 
 /* Stat dots */
@@ -541,8 +658,8 @@ html.dark .pill-blue {
     box-shadow: 0 0 12px rgba(90, 215, 126, 0.55);
 }
 .dot-amber {
-    background: #e9b964;
-    box-shadow: 0 0 10px rgba(233, 185, 100, 0.45);
+    background: var(--brand-yellow);
+    box-shadow: 0 0 10px rgba(255, 207, 36, 0.55);
 }
 .dot-red {
     background: #ef5b5b;

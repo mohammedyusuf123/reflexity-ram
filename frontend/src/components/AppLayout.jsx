@@ -57,7 +57,8 @@ export default function AppLayout({ children, requireAdmin = false }) {
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-56 shrink-0 border-r border-white/5 bg-black/40 flex flex-col">
+      <aside className="w-56 shrink-0 border-r flex flex-col"
+        style={{ background: "var(--bg-elev)", borderColor: "var(--border)" }}>
         {/* Brand */}
         <div className="p-5 border-b border-white/5">
           <Link to="/" className="flex items-center gap-2">

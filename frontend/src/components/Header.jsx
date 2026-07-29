@@ -195,7 +195,8 @@ export default function Header() {
         {/* ── Mobile drawer ──────────────────────────────── */}
         {open && (
           <div
-            className="lg:hidden border-t border-white/[0.06] bg-black/95 backdrop-blur-xl"
+            className="lg:hidden border-t backdrop-blur-xl"
+            style={{ background: "var(--bg-elev)", borderColor: "var(--border)" }}
             data-testid="header-mobile-drawer"
           >
             <div className="container-tight py-4 flex flex-col gap-0.5">

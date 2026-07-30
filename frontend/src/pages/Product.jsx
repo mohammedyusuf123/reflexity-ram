@@ -95,6 +95,41 @@ export default function Product() {
       .slice(0, 4);
   }, [recentSlugs, slug]);
 
+  // JSON-LD structured data for Google rich results
+  const jsonLd = useMemo(() => {
+    if (!p) return null;
+    const imageUrl = imgUrl(p.images?.[0]);
+    return {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: p.name,
+      image: imageUrl ? [imageUrl] : [],
+      description: `${p.name} — ${p.generation} ${p.formFactor} ${p.speedLabel} ${p.cas} ${p.condition}. ${p.warranty} warranty.`,
+      sku: p.sku,
+      brand: { "@type": "Brand", name: p.name.split(" ")[0] || "Reflexity RAM" },
+      offers: {
+        "@type": "Offer",
+        url: `https://reflexityram.com/shop/${p.slug}`,
+        priceCurrency: "USD",
+        price: p.price,
+        priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+        itemCondition: p.condition === "New" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
+        availability: p.stock === "out"
+          ? "https://schema.org/OutOfStock"
+          : "https://schema.org/InStock",
+        seller: { "@type": "Organization", name: "Reflexity RAM" },
+      },
+      additionalProperty: [
+        { "@type": "PropertyValue", name: "Generation", value: p.generation },
+        { "@type": "PropertyValue", name: "Form Factor", value: p.formFactor },
+        { "@type": "PropertyValue", name: "Capacity", value: p.capacityLabel },
+        { "@type": "PropertyValue", name: "Speed", value: p.speedLabel },
+        { "@type": "PropertyValue", name: "CAS Latency", value: p.cas },
+        { "@type": "PropertyValue", name: "ECC", value: p.ecc ? "Yes" : "No" },
+      ].filter((v) => v.value),
+    };
+  }, [p]);
+
   if (loading) {
     return (
       <>
@@ -177,6 +212,12 @@ export default function Product() {
   return (
     <>
       <Header />
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
       <main className="page pb-32 md:pb-16" data-testid="product-page">
         <div className="container-tight pt-8">
           <Link

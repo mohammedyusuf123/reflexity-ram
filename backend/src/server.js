@@ -14,6 +14,8 @@ const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 const pageRoutes = require('./routes/pages');
 const seedRoutes = require('./routes/seed');
+const sitemapRoutes = require('./routes/sitemap');
+const feedRoutes = require('./routes/feed');
 
 // Stripe routes are only loaded when a real key is configured.
 // This prevents a crash if STRIPE_SECRET_KEY is missing or empty.
@@ -122,6 +124,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/pages', pageRoutes);
+app.use('/', sitemapRoutes);
+app.use('/', feedRoutes);
 // One-time seed endpoint — only active when SEED_SECRET env var is set
 if (process.env.SEED_SECRET) {
   app.use('/api/seed', seedRoutes);

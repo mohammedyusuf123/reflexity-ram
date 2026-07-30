@@ -13,7 +13,7 @@ const EMPTY_PRODUCT = {
   formFactor: 'UDIMM', capacity: 16, speed: 3200, cas: 'CL16', timings: '', voltage: '1.35V',
   condition: 'Used', warranty: '90 Days',
   price: 0, stockQuantity: 0,
-  images: [], description: '', rgb: false,
+  images: [],
 };
 
 function ImageUploader({ images, onChange }) {
@@ -142,7 +142,6 @@ function ProductModal({ product, onClose, onSave }) {
       const speed = Number(form.speed);
       const data = {
         name: form.name.trim(),
-        description: form.description || '',
         line: form.line,
         generation: form.generation,
         formFactor: form.formFactor,
@@ -201,9 +200,6 @@ function ProductModal({ product, onClose, onSave }) {
               <Field label="Product name" required className="md:col-span-2">
                 <input className="input" value={form.name} onChange={e => setField('name', e.target.value)} required autoFocus placeholder="e.g. Samsung 64GB DDR4-3200 ECC RDIMM" />
               </Field>
-              <Field label="Description" className="md:col-span-2">
-                <textarea className="input min-h-[60px]" value={form.description} onChange={e => setField('description', e.target.value)} placeholder="Shown on the product page" />
-              </Field>
               <Field label="Images" className="md:col-span-2">
                 <ImageUploader images={form.images || []} onChange={imgs => setField('images', imgs)} />
               </Field>
@@ -246,12 +242,6 @@ function ProductModal({ product, onClose, onSave }) {
               </Field>
               <Field label="Voltage">
                 <input className="input" value={form.voltage} onChange={e => setField('voltage', e.target.value)} placeholder="1.35V" />
-              </Field>
-              <Field label="RGB">
-                <select className="input" value={form.rgb ? 'yes' : 'no'} onChange={e => setField('rgb', e.target.value === 'yes')}>
-                  <option value="no">No</option>
-                  <option value="yes">Yes</option>
-                </select>
               </Field>
             </div>
           </div>

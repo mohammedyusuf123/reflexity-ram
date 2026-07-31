@@ -18,7 +18,16 @@
     <g:identifier_exists>true</g:identifier_exists>
     <g:item_group_id>reflexity-ram</g:item_group_id>
     <g:product_type>Computer Memory</g:product_type>
-    <g:google_product_category>Computers &amp; Accessories &gt; Components &gt; Memory</g:google_product_category>
+    <g:shipping>
+      <g:country>CA</g:country>
+      <g:service>Standard</g:service>
+      <g:price>14 CAD</g:price>
+    </g:shipping>
+    <g:shipping>
+      <g:country>US</g:country>
+      <g:service>Standard</g:service>
+      <g:price>14 CAD</g:price>
+    </g:shipping>
   </item>
   <item>
     <g:id>RFX-SK-HYNIX-64GB-DDR4-ECC-LRDIMM-</g:id>
@@ -34,7 +43,16 @@
     <g:identifier_exists>true</g:identifier_exists>
     <g:item_group_id>reflexity-ram</g:item_group_id>
     <g:product_type>Computer Memory</g:product_type>
-    <g:google_product_category>Computers &amp; Accessories &gt; Components &gt; Memory</g:google_product_category>
+    <g:shipping>
+      <g:country>CA</g:country>
+      <g:service>Standard</g:service>
+      <g:price>14 CAD</g:price>
+    </g:shipping>
+    <g:shipping>
+      <g:country>US</g:country>
+      <g:service>Standard</g:service>
+      <g:price>14 CAD</g:price>
+    </g:shipping>
   </item>
 </channel>
 </rss>

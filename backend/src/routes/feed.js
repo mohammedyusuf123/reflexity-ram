@@ -29,9 +29,9 @@ router.get('/feed.xml', async (req, res) => {
       xml += `    <description><![CDATA[${p.name} — ${p.generation} ${p.formFactor} ${p.speedLabel} ${p.cas}. ${p.condition}. ${p.warranty} warranty.]]></description>\n`;
       xml += `    <link>${BASE_URL}/shop/${p.slug}</link>\n`;
       if (imageUrl) xml += `    <g:image_link>${imageUrl}</g:image_link>\n`;
-      xml += `    <g:price>${p.price} USD</g:price>\n`;
+      xml += `    <g:price>${p.price} CAD</g:price>\n`;
       if (p.compareAt && p.compareAt > p.price) {
-        xml += `    <g:sale_price>${p.price} USD</g:sale_price>\n`;
+        xml += `    <g:sale_price>${p.price} CAD</g:sale_price>\n`;
       }
       xml += `    <g:condition>${condition}</g:condition>\n`;
       xml += `    <g:availability>${availability}</g:availability>\n`;
@@ -40,7 +40,16 @@ router.get('/feed.xml', async (req, res) => {
       xml += `    <g:identifier_exists>true</g:identifier_exists>\n`;
       xml += `    <g:item_group_id>reflexity-ram</g:item_group_id>\n`;
       xml += `    <g:product_type>Computer Memory</g:product_type>\n`;
-      xml += `    <g:google_product_category>Computers &amp; Accessories &gt; Components &gt; Memory</g:google_product_category>\n`;
+      xml += '    <g:shipping>\n';
+      xml += '      <g:country>CA</g:country>\n';
+      xml += '      <g:service>Standard</g:service>\n';
+      xml += '      <g:price>14 CAD</g:price>\n';
+      xml += '    </g:shipping>\n';
+      xml += '    <g:shipping>\n';
+      xml += '      <g:country>US</g:country>\n';
+      xml += '      <g:service>Standard</g:service>\n';
+      xml += '      <g:price>14 CAD</g:price>\n';
+      xml += '    </g:shipping>\n';
       xml += '  </item>\n';
     }
 
@@ -74,14 +83,13 @@ router.get('/feed.csv', async (req, res) => {
         `"${desc.replace(/"/g, '""')}"`,
         `${BASE_URL}/shop/${p.slug}`,
         imageUrl,
-        `${p.price} USD`,
+        `${p.price} CAD`,
         condition,
         availability,
         'Reflexity RAM',
         p.sku,
         'reflexity-ram',
         'Computer Memory',
-        'Computers & Accessories > Components > Memory',
       ].join(',');
     });
 

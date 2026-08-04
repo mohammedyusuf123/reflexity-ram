@@ -10,6 +10,7 @@ import useAuthStore from "@/lib/authStore";
 // Public pages
 import Home from "@/pages/Home";
 import Wholesale from "@/pages/Wholesale";
+import Liquidators from "@/pages/Liquidators";
 import Shop from "@/pages/Shop";
 import Product from "@/pages/Product";
 import Cart from "@/pages/Cart";
@@ -67,6 +68,7 @@ export default function App() {
           {/* Store */}
           <Route path="/" element={<Home />} />
           <Route path="/wholesale" element={<Wholesale />} />
+          <Route path="/liquidators" element={<Liquidators />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/shop/:slug" element={<Product />} />
           <Route path="/cart" element={<Cart />} />

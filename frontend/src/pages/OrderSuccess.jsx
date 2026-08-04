@@ -4,6 +4,7 @@ import { CheckCircle, Package, Truck, Loader2, AlertTriangle } from 'lucide-reac
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { ordersApi } from '@/lib/api';
+import GoogleCustomerReviewsOptIn from '@/components/GoogleCustomerReviewsOptIn';
 
 const STATUS_STEPS = [
   { id: 'pending', label: 'Order placed' },
@@ -67,6 +68,8 @@ export default function OrderSuccess() {
                 Order #{order.orderNumber}
               </div>
             </div>
+
+            <GoogleCustomerReviewsOptIn order={order} />
 
             {/* Status tracker */}
             <div className="glass rounded-2xl p-6 mb-6">

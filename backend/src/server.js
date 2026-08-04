@@ -16,6 +16,7 @@ const pageRoutes = require('./routes/pages');
 const seedRoutes = require('./routes/seed');
 const sitemapRoutes = require('./routes/sitemap');
 const feedRoutes = require('./routes/feed');
+const reviewRoutes = require('./routes/reviews');
 
 // Stripe routes are only loaded when a real key is configured.
 // This prevents a crash if STRIPE_SECRET_KEY is missing or empty.
@@ -119,6 +120,7 @@ app.get('/api/health', healthHandler);
 // ─── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);

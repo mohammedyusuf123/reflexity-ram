@@ -55,7 +55,7 @@ router.get(
   async (req, res) => {
     try {
       const { orderNumber } = req.params;
-      const order = await Order.findOne({ orderNumber }).lean();
+      const order = await Order.findOne({ orderNumber }).populate('user', 'email').lean();
 
       if (!order) {
         return res.status(404).json({ error: 'Order not found' });

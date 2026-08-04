@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Package,
   Cpu,
+  Star,
 } from "lucide-react";
 import { Pencil, Globe } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ import { useCart, useRecentlyViewed } from "@/lib/store";
 import useAuthStore from "@/lib/authStore";
 import { useSEO } from "@/lib/seo";
 import { productsApi } from "@/lib/api";
+import { reviewsApi } from "@/lib/api";
 
 // Normalise image: API returns {url, publicId, alt}, local data has plain strings
 function imgUrl(img) {
@@ -53,6 +55,7 @@ export default function Product() {
   const [tab, setTab] = useState("specs");
   const [modalOpen, setModalOpen] = useState(false);
   const [skuCopied, setSkuCopied] = useState(false);
+  const [reviewData, setReviewData] = useState({ reviews: [], summary: { count: 0, average: 0 } });
 
   const addItem = useCart((s) => s.addItem);
   const isAdmin = useAuthStore((s) => s.isAdmin);
@@ -89,6 +92,11 @@ export default function Product() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  useEffect(() => {
+    if (!p?.slug) return;
+    reviewsApi.list(p.slug).then(({ data }) => setReviewData(data)).catch(() => {});
+  }, [p?.slug]);
+
   const recentlyViewed = useMemo(() => {
     return recentSlugs
       .filter((s) => s !== slug)
@@ -98,7 +106,7 @@ export default function Product() {
   // JSON-LD structured data for Google rich results
   const jsonLd = useMemo(() => {
     if (!p) return null;
-    return {
+    const data = {
       "@context": "https://schema.org",
       "@type": "Product",
       name: p.name,
@@ -127,7 +135,17 @@ export default function Product() {
         { "@type": "PropertyValue", name: "ECC", value: p.ecc ? "Yes" : "No" },
       ].filter((v) => v.value),
     };
-  }, [p]);
+    if (reviewData.summary.count > 0) {
+      data.aggregateRating = {
+        "@type": "AggregateRating",
+        ratingValue: reviewData.summary.average,
+        reviewCount: reviewData.summary.count,
+        bestRating: 5,
+        worstRating: 1,
+      };
+    }
+    return data;
+  }, [p, reviewData.summary]);
 
   if (loading) {
     return (
@@ -496,6 +514,8 @@ export default function Product() {
             </div>
           </div>
 
+          <ReviewsSection product={p} data={reviewData} onUpdated={setReviewData} />
+
           {/* Related */}
           {related.length > 0 && (
             <div className="mt-16">
@@ -553,6 +573,95 @@ export default function Product() {
       />
       <Footer />
     </>
+  );
+}
+
+function ReviewsSection({ product, data, onUpdated }) {
+  const user = useAuthStore((s) => s.user);
+  const [rating, setRating] = useState(5);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const refresh = () => reviewsApi.list(product.slug).then(({ data: next }) => onUpdated(next)).catch(() => {});
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    try {
+      await reviewsApi.create(product.slug, { rating, title, body });
+      setTitle("");
+      setBody("");
+      await refresh();
+      toast.success("Review published", { description: "Verified purchase review" });
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Could not submit review");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="mt-16 border-t border-white/5 pt-10" data-testid="product-reviews">
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+        <div>
+          <div className="section-label mb-3"><span className="num">REVIEWS</span> VERIFIED BUYERS</div>
+          <h2 className="text-2xl font-semibold">What customers say</h2>
+        </div>
+        {data.summary.count > 0 && (
+          <div className="flex items-center gap-2" aria-label={`${data.summary.average} out of 5 stars from ${data.summary.count} reviews`}>
+            <div className="flex text-amber-500">{[1, 2, 3, 4, 5].map((n) => <Star key={n} size={16} fill={n <= Math.round(data.summary.average) ? "currentColor" : "none"} />)}</div>
+            <span className="mono text-[12px]">{data.summary.average}/5 · {data.summary.count} review{data.summary.count === 1 ? "" : "s"}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-6">
+        <div className="space-y-4">
+          {data.reviews.length === 0 ? (
+            <div className="glass-soft rounded-xl p-5 text-[14px]" style={{ color: "var(--fg-muted)" }}>
+              No reviews yet. Verified buyers can share their experience after their order ships.
+            </div>
+          ) : data.reviews.map((review) => (
+            <article key={review._id || `${review.createdAt}-${review.displayName}`} className="glass-soft rounded-xl p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex text-amber-500">{[1, 2, 3, 4, 5].map((n) => <Star key={n} size={14} fill={n <= review.rating ? "currentColor" : "none"} />)}</div>
+                <time className="mono text-[10px] text-neutral-500" dateTime={review.createdAt}>{new Date(review.createdAt).toLocaleDateString()}</time>
+              </div>
+              {review.title && <h3 className="font-semibold text-[15px] mt-3">{review.title}</h3>}
+              <p className="text-[14px] leading-relaxed mt-2" style={{ color: "var(--fg-muted)" }}>{review.body}</p>
+              <div className="mt-4 flex items-center gap-2 text-[11px] text-neutral-500">
+                <span>{review.displayName}</span>
+                {review.verifiedPurchase && <span className="text-emerald-500">Verified purchase</span>}
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="glass rounded-xl p-5 h-fit">
+          <h3 className="font-semibold text-[15px]">Bought this module?</h3>
+          {user ? (
+            <form onSubmit={submit} className="mt-4 space-y-3">
+              <div className="flex items-center gap-1" aria-label="Choose rating">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button key={n} type="button" onClick={() => setRating(n)} aria-label={`${n} star${n === 1 ? "" : "s"}`} className="p-1 text-amber-500 hover:scale-110 transition-transform">
+                    <Star size={19} fill={n <= rating ? "currentColor" : "none"} />
+                  </button>
+                ))}
+              </div>
+              <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Review title (optional)" maxLength={120} />
+              <textarea className="input min-h-28 resize-y" value={body} onChange={(e) => setBody(e.target.value)} placeholder="How did it work for your system?" minLength={10} maxLength={2000} required />
+              <button className="btn-primary w-full" disabled={submitting}>{submitting ? "Publishing..." : "Publish verified review"}</button>
+              <p className="text-[11px] text-neutral-500">Only paid orders that have shipped can review. Low ratings are published too.</p>
+            </form>
+          ) : (
+            <p className="text-[13px] leading-relaxed mt-2" style={{ color: "var(--fg-muted)" }}>
+              <Link to="/account" className="underline">Sign in</Link> with the account used for your order to leave a verified review.
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -80,6 +80,12 @@ export const productsApi = {
   getBySlug: (slug) => api.get(`/products/${slug}`),
 };
 
+// Reviews are public to read, but the server only accepts verified purchases.
+export const reviewsApi = {
+  list: (slug) => api.get(`/reviews/product/${slug}`),
+  create: (slug, data) => api.post(`/reviews/product/${slug}`, data),
+};
+
 // ─── Cart API ─────────────────────────────────────────────────────────────────
 export const cartApi = {
   get: () => api.get('/cart'),

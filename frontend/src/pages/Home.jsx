@@ -17,7 +17,7 @@ const LANES = [
     title: "Server memory",
     sub: "RDIMM · LRDIMM · ECC",
     body: "Registered DDR4 server pulls, tested and ECC-verified.",
-    to: "/shop?line=Server",
+    to: "/shop?form=RDIMM&form=LRDIMM",
     primary: true,
   },
   {
@@ -25,14 +25,14 @@ const LANES = [
     title: "Laptop",
     sub: "SO-DIMM",
     body: "DDR4 and DDR5 laptop sticks.",
-    to: "/shop?formFactor=SO-DIMM",
+    to: "/shop?form=SO-DIMM",
   },
   {
     icon: Monitor,
     title: "Desktop",
     sub: "UDIMM",
     body: "Standard desktop memory.",
-    to: "/shop?formFactor=UDIMM",
+    to: "/shop?form=UDIMM",
   },
 ];
 

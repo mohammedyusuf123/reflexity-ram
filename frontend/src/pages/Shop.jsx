@@ -27,9 +27,12 @@ const SORTS = [
 
 // Derive a human-readable category label from URL params
 function getCategoryLabel(gen, form, eccOnly) {
+  const serverForms = ["RDIMM", "LRDIMM"];
+  const allServer = serverForms.every((f) => form.includes(f)) && form.length === 2;
   // Top-level category names (form only, no gen prefix)
-  if (form.length === 1 && gen.length === 0) {
+  if ((form.length === 1 || allServer) && gen.length === 0) {
     const map = { UDIMM: "Desktop RAM", "SO-DIMM": "Laptop RAM", RDIMM: "Server RAM", LRDIMM: "Server RAM" };
+    if (allServer) return "Server RAM";
     if (map[form[0]]) return map[form[0]];
   }
   // Specific sub-category (gen + form)
@@ -38,6 +41,8 @@ function getCategoryLabel(gen, form, eccOnly) {
   if (form.length === 1) {
     const map = { UDIMM: "Desktop", "SO-DIMM": "Laptop", RDIMM: "Server", LRDIMM: "Server" };
     parts.unshift(map[form[0]] || form[0]);
+  } else if (allServer) {
+    parts.unshift("Server");
   }
   if (eccOnly) parts.push("ECC");
   return parts.length ? parts.join(" ") : "All Memory";

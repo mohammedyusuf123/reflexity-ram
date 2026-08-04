@@ -22,6 +22,11 @@ for entry in \
   "/|daily|1.0" \
   "/shop|daily|0.9" \
   "/categories|weekly|0.8" \
+  "/guides|weekly|0.8" \
+  "/guides/ddr4-vs-ddr5|monthly|0.7" \
+  "/guides/ecc-rdimm-udimm-explained|monthly|0.7" \
+  "/guides/how-to-identify-ram|monthly|0.7" \
+  "/guides/how-much-ram-do-i-need|monthly|0.7" \
   "/wholesale|monthly|0.6" \
   "/support|monthly|0.5" \
   "/shipping|monthly|0.5" \

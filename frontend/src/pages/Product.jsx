@@ -60,9 +60,9 @@ export default function Product() {
   const recentSlugs = useRecentlyViewed((s) => s.slugs);
 
   useSEO({
-    title: p?.name,
+    title: p?.metaTitle || p?.name,
     description: p
-      ? `${p.name} — ${p.generation} ${p.formFactor} · ${p.speedLabel} · ${p.cas} · ${p.condition}.`
+      ? p.metaDescription || `${p.name} — ${p.generation} ${p.formFactor} · ${p.speedLabel} · ${p.cas} · ${p.condition}. Tested RAM with ${p.warranty} warranty, shipping from Toronto across Canada and the US.`
       : null,
   });
 
@@ -98,19 +98,18 @@ export default function Product() {
   // JSON-LD structured data for Google rich results
   const jsonLd = useMemo(() => {
     if (!p) return null;
-    const imageUrl = imgUrl(p.images?.[0]);
     return {
       "@context": "https://schema.org",
       "@type": "Product",
       name: p.name,
-      image: imageUrl ? [imageUrl] : [],
-      description: `${p.name} — ${p.generation} ${p.formFactor} ${p.speedLabel} ${p.cas} ${p.condition}. ${p.warranty} warranty.`,
+      image: (p.images || []).map(imgUrl).filter(Boolean),
+      description: p.description || `${p.name} — ${p.generation} ${p.formFactor} ${p.speedLabel} ${p.cas} ${p.condition}. ${p.warranty} warranty.`,
       sku: p.sku,
       brand: { "@type": "Brand", name: p.name.split(" ")[0] || "Reflexity RAM" },
       offers: {
         "@type": "Offer",
         url: `https://reflexityram.com/shop/${p.slug}`,
-        priceCurrency: "USD",
+        priceCurrency: "CAD",
         price: p.price,
         priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
         itemCondition: p.condition === "New" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",

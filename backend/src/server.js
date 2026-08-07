@@ -17,6 +17,7 @@ const seedRoutes = require('./routes/seed');
 const sitemapRoutes = require('./routes/sitemap');
 const feedRoutes = require('./routes/feed');
 const reviewRoutes = require('./routes/reviews');
+const { fixMerchantProductData } = require('./migrations/fixMerchantProductData');
 
 // Stripe routes are only loaded when a real key is configured.
 // This prevents a crash if STRIPE_SECRET_KEY is missing or empty.
@@ -164,8 +165,14 @@ const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('✅ MongoDB connected');
+    try {
+      await fixMerchantProductData();
+    } catch (err) {
+      // Do not take the store offline for a non-critical data normalization.
+      console.error('Merchant product normalization failed:', err.message);
+    }
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`   Stripe: ${STRIPE_ENABLED ? 'enabled' : 'disabled'}`);

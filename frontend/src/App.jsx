@@ -34,6 +34,7 @@ import Terms from "@/pages/policies/Terms";
 import Support from "@/pages/policies/Support";
 import FAQ from "@/pages/policies/FAQ";
 import International from "@/pages/policies/International";
+import BusinessInfo from "@/pages/policies/BusinessInfo";
 
 // Admin pages
 import AdminProducts from "@/pages/admin/Products";
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/support" element={<Support />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/international" element={<International />} />
+          <Route path="/business-info" element={<BusinessInfo />} />
 
           {/* Admin (protected by AdminLayout) */}
           <Route path="/admin" element={<Navigate to="/admin/products" replace />} />

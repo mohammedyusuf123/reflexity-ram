@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import useCartStore from '@/lib/cartStore';
 import { stripeApi } from '@/lib/api';
 import { useSEO } from '@/lib/seo';
+import { imageUrl } from '@/lib/imageUrl';
 
 // Checkout is handled by Stripe's hosted Checkout page:
 // - Address collection restricted to Canada + United States, with the
@@ -58,7 +59,7 @@ export default function Checkout() {
               {items.map((item) => (
                 <div key={item.slug} className="glass rounded-xl p-4 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-lg overflow-hidden bg-white/5 shrink-0">
-                    {item.image && <img src={item.image} alt="" className="w-full h-full object-cover" />}
+                    {item.image && <img src={imageUrl(item.image)} alt="" className="w-full h-full object-cover" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-[14px] line-clamp-1">{item.name}</div>
@@ -75,6 +76,7 @@ export default function Checkout() {
             {/* Summary + hand-off */}
             <div className="lg:col-span-2">
               <div className="glass rounded-2xl p-6 sticky top-24">
+                <p className="text-[11px] text-neutral-500 mb-4">All prices and checkout charges are in USD.</p>
                 <div className="space-y-2 text-[13px] mb-4">
                   <div className="flex justify-between">
                     <span className="text-neutral-400">Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})</span>

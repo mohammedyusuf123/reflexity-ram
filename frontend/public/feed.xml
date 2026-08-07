@@ -6,52 +6,50 @@
   <description>Server and desktop RAM modules — DDR4, DDR5, ECC, UDIMM, SO-DIMM, RDIMM, LRDIMM</description>
   <item>
     <g:id>RFX-SAMSUNG-64GB-DDR4-3200-ECC-REG</g:id>
-    <title><![CDATA[Samsung 64GB DDR4-3200 ECC Registered RDIMM Server Memory PC4-3200AA 4Rx4 M386A8K40DM2-CWEZY]]></title>
-    <description><![CDATA[Samsung 64GB DDR4-3200 ECC Registered RDIMM Server Memory PC4-3200AA 4Rx4 M386A8K40DM2-CWEZY — DDR4 UDIMM 3200 MT/s CL22. Used. 30 Days warranty.]]></description>
+    <title><![CDATA[Samsung 64GB DDR4-3200 ECC LRDIMM Server Memory PC4-3200AA 4Rx4 M386A8K40DM2-CWEZY]]></title>
+    <description><![CDATA[Samsung 64GB DDR4-3200 ECC LRDIMM server memory, 4Rx4, manufacturer part number M386A8K40DM2-CWEZY. Used and individually tested. 30 Days warranty.]]></description>
     <link>https://reflexityram.com/shop/rfx-samsung-64gb-ddr4-3200-ecc-registered-rdimm-serv</link>
     <g:image_link>https://res.cloudinary.com/dfquny0nk/image/upload/v1785445409/reflexity-ram/products/product-1785445408907-uc07t4fnt.jpg</g:image_link>
-    <g:price>510 CAD</g:price>
+    <g:price>585 USD</g:price>
     <g:condition>used</g:condition>
     <g:availability>in_stock</g:availability>
-    <g:brand>Reflexity RAM</g:brand>
-    <g:mpn>RFX-SAMSUNG-64GB-DDR4-3200-ECC-REG</g:mpn>
+    <g:brand>Samsung</g:brand>
+    <g:mpn>M386A8K40DM2-CWEZY</g:mpn>
     <g:identifier_exists>true</g:identifier_exists>
-    <g:item_group_id>reflexity-ram</g:item_group_id>
     <g:product_type>Computer Memory</g:product_type>
     <g:shipping>
       <g:country>CA</g:country>
       <g:service>Standard</g:service>
-      <g:price>14 CAD</g:price>
+      <g:price>14 USD</g:price>
     </g:shipping>
     <g:shipping>
       <g:country>US</g:country>
       <g:service>Standard</g:service>
-      <g:price>14 CAD</g:price>
+      <g:price>14 USD</g:price>
     </g:shipping>
   </item>
   <item>
     <g:id>RFX-SK-HYNIX-64GB-DDR4-ECC-LRDIMM-</g:id>
-    <title><![CDATA[SK Hynix 64GB DDR4 ECC LRDIMM 2666V 4Rx4 Server RAM]]></title>
-    <description><![CDATA[SK Hynix 64GB DDR4 ECC LRDIMM 2666V 4Rx4 Server RAM — DDR4 RDIMM 2666 MT/s CL19. Used. 30 Days warranty.]]></description>
+    <title><![CDATA[SK hynix 64GB DDR4-2666 ECC LRDIMM Server Memory 4Rx4 HMAA8GL7CPR4N-VK]]></title>
+    <description><![CDATA[SK hynix 64GB DDR4-2666 ECC LRDIMM server memory, 4Rx4, manufacturer part number HMAA8GL7CPR4N-VK. Used and individually tested. 30 Days warranty.]]></description>
     <link>https://reflexityram.com/shop/rfx-sk-hynix-64gb-ddr4-ecc-lrdimm-2666v-4rx4-pc4-266</link>
     <g:image_link>https://res.cloudinary.com/dfquny0nk/image/upload/v1783288682/reflexity-ram/products/product-1783288682346-dye6s9nnk.jpg</g:image_link>
-    <g:price>420 CAD</g:price>
+    <g:price>500 USD</g:price>
     <g:condition>used</g:condition>
     <g:availability>in_stock</g:availability>
-    <g:brand>Reflexity RAM</g:brand>
-    <g:mpn>RFX-SK-HYNIX-64GB-DDR4-ECC-LRDIMM-</g:mpn>
+    <g:brand>SK hynix</g:brand>
+    <g:mpn>HMAA8GL7CPR4N-VK</g:mpn>
     <g:identifier_exists>true</g:identifier_exists>
-    <g:item_group_id>reflexity-ram</g:item_group_id>
     <g:product_type>Computer Memory</g:product_type>
     <g:shipping>
       <g:country>CA</g:country>
       <g:service>Standard</g:service>
-      <g:price>14 CAD</g:price>
+      <g:price>14 USD</g:price>
     </g:shipping>
     <g:shipping>
       <g:country>US</g:country>
       <g:service>Standard</g:service>
-      <g:price>14 CAD</g:price>
+      <g:price>14 USD</g:price>
     </g:shipping>
   </item>
 </channel>

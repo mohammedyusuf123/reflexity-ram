@@ -3,6 +3,7 @@ import { Loader2, Search, ChevronLeft, ChevronRight, X, Package, Truck } from 'l
 import { toast } from 'sonner';
 import AppLayout from '@/components/AppLayout';
 import { adminApi } from '@/lib/api';
+import { imageUrl } from '@/lib/imageUrl';
 
 const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
 const STATUS_PILLS = {
@@ -81,7 +82,7 @@ function OrderDetailModal({ orderId, onClose }) {
                 {order.items?.map((item, idx) => (
                   <div key={idx} className="flex gap-3 text-[12.5px]">
                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/5 shrink-0">
-                      {item.image && <img src={item.image} alt="" className="w-full h-full object-cover" />}
+                      {item.image && <img src={imageUrl(item.image)} alt="" className="w-full h-full object-cover" />}
                     </div>
                     <div className="flex-1">
                       <div>{item.name}</div>

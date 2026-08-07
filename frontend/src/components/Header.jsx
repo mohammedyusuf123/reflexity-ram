@@ -13,6 +13,7 @@ import useAuthStore from "@/lib/authStore";
 
 const NAV = [
   { to: "/categories", label: "Shop RAM" },
+  { to: "/wholesale", label: "Wholesale" },
   { to: "/guides", label: "Guides" },
   { to: "/liquidators", label: "Liquidation" },
   { to: "/support", label: "Support" },

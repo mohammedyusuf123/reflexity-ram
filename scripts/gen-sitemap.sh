@@ -29,6 +29,7 @@ for entry in \
   "/guides/how-much-ram-do-i-need|monthly|0.7" \
   "/wholesale|monthly|0.6" \
   "/support|monthly|0.5" \
+  "/business-info|monthly|0.5" \
   "/shipping|monthly|0.5" \
   "/returns|monthly|0.5" \
   "/warranty|monthly|0.5" \

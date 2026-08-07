@@ -7,9 +7,11 @@ import {
 import { toast } from 'sonner';
 import AppLayout from '@/components/AppLayout';
 import { adminApi } from '@/lib/api';
+import { imageUrl } from '@/lib/imageUrl';
 
 const EMPTY_PRODUCT = {
   name: '', line: 'Desktop', generation: 'DDR4',
+  brand: '', mpn: '', description: '',
   formFactor: 'UDIMM', capacity: 16, speed: 3200, cas: 'CL16', timings: '', voltage: '1.35V',
   condition: 'Used', warranty: '90 Days',
   price: 0, stockQuantity: 0,
@@ -50,7 +52,7 @@ function ImageUploader({ images, onChange }) {
       <div className="flex flex-wrap gap-2 mb-2">
         {images.map((img, idx) => (
           <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden bg-white/5 group">
-            <img src={img.url} alt="" className="w-full h-full object-cover" />
+            <img src={imageUrl(img)} alt="" className="w-full h-full object-cover" />
             <button
               type="button"
               onClick={() => removeImage(img, idx)}
@@ -142,6 +144,9 @@ function ProductModal({ product, onClose, onSave }) {
       const speed = Number(form.speed);
       const data = {
         name: form.name.trim(),
+        brand: form.brand.trim(),
+        mpn: form.mpn.trim(),
+        description: form.description.trim(),
         line: form.line,
         generation: form.generation,
         formFactor: form.formFactor,
@@ -199,6 +204,15 @@ function ProductModal({ product, onClose, onSave }) {
             <div className="grid md:grid-cols-2 gap-3">
               <Field label="Product name" required className="md:col-span-2">
                 <input className="input" value={form.name} onChange={e => setField('name', e.target.value)} required autoFocus placeholder="e.g. Samsung 64GB DDR4-3200 ECC RDIMM" />
+              </Field>
+              <Field label="Manufacturer / brand">
+                <input className="input" value={form.brand} onChange={e => setField('brand', e.target.value)} placeholder="e.g. Samsung" />
+              </Field>
+              <Field label="Manufacturer part number">
+                <input className="input" value={form.mpn} onChange={e => setField('mpn', e.target.value)} placeholder="e.g. M386A8K40DM2-CWE" />
+              </Field>
+              <Field label="Description" className="md:col-span-2">
+                <textarea className="input min-h-20 resize-y" value={form.description} onChange={e => setField('description', e.target.value)} placeholder="Describe the exact module, condition, and what is included." />
               </Field>
               <Field label="Images" className="md:col-span-2">
                 <ImageUploader images={form.images || []} onChange={imgs => setField('images', imgs)} />
@@ -423,7 +437,7 @@ export default function AdminProducts() {
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/5 shrink-0">
                             {p.images?.[0] ? (
-                              <img src={p.images[0].url} alt="" className="w-full h-full object-cover" />
+                              <img src={imageUrl(p.images[0])} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-neutral-600">
                                 <ImageIcon size={14} />

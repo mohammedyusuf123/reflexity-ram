@@ -23,6 +23,9 @@ const textExts = new Set([
 function walk(dir) {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    // Local runtime env files are intentionally untracked and may contain the
+    // credentials this scanner is designed to keep out of committed source.
+    if (entry.isFile() && entry.name.startsWith('.env') && entry.name !== '.env.example') continue;
     if (entry.name.startsWith('.') && entry.name !== '.github' && entry.name !== '.env.example') {
       if (entry.isDirectory() && ignoredDirs.has(entry.name)) continue;
     }

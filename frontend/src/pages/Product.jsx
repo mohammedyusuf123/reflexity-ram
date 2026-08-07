@@ -20,6 +20,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ImageModal from "@/components/ImageModal";
 import ProductCard from "@/components/ProductCard";
+import { imageUrl } from "@/lib/imageUrl";
 import EmptyState from "@/components/EmptyState";
 import { useCart, useRecentlyViewed } from "@/lib/store";
 import useAuthStore from "@/lib/authStore";
@@ -27,12 +28,6 @@ import { useSEO } from "@/lib/seo";
 import { productsApi } from "@/lib/api";
 import { reviewsApi } from "@/lib/api";
 
-// Normalise image: API returns {url, publicId, alt}, local data has plain strings
-function imgUrl(img) {
-  if (!img) return null;
-  if (typeof img === "string") return img;
-  return img.url || null;
-}
 
 const TABS = [
   { id: "specs", label: "Specifications" },
@@ -106,18 +101,19 @@ export default function Product() {
   // JSON-LD structured data for Google rich results
   const jsonLd = useMemo(() => {
     if (!p) return null;
+    const manufacturer = p.brand || (/^sk[ -]?hynix\b/i.test(p.name) ? "SK hynix" : p.name.split(" ")[0]);
     const data = {
       "@context": "https://schema.org",
       "@type": "Product",
       name: p.name,
-      image: (p.images || []).map(imgUrl).filter(Boolean),
+      image: (p.images || []).map(imageUrl).filter(Boolean),
       description: p.description || `${p.name} — ${p.generation} ${p.formFactor} ${p.speedLabel} ${p.cas} ${p.condition}. ${p.warranty} warranty.`,
       sku: p.sku,
-      brand: { "@type": "Brand", name: p.name.split(" ")[0] || "Reflexity RAM" },
+      brand: { "@type": "Brand", name: manufacturer },
       offers: {
         "@type": "Offer",
         url: `https://reflexityram.com/shop/${p.slug}`,
-        priceCurrency: "CAD",
+        priceCurrency: "USD",
         price: p.price,
         priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
         itemCondition: p.condition === "New" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
@@ -135,6 +131,7 @@ export default function Product() {
         { "@type": "PropertyValue", name: "ECC", value: p.ecc ? "Yes" : "No" },
       ].filter((v) => v.value),
     };
+    if (p.mpn) data.mpn = p.mpn;
     if (reviewData.summary.count > 0) {
       data.aggregateRating = {
         "@type": "AggregateRating",
@@ -224,7 +221,7 @@ export default function Product() {
   };
 
   // Normalised image URLs for gallery
-  const imageUrls = (p.images || []).map(imgUrl).filter(Boolean);
+  const imageUrls = (p.images || []).map(imageUrl).filter(Boolean);
 
   return (
     <>
@@ -321,7 +318,7 @@ export default function Product() {
               </div>
 
               <div className="flex items-end gap-3 mb-2">
-                <div className="text-4xl font-bold tracking-tight">${p.price.toFixed(2)}</div>
+                <div className="text-4xl font-bold tracking-tight">${p.price.toFixed(2)} <span className="text-sm font-medium text-neutral-500">USD</span></div>
                 {p.compareAt && p.compareAt > p.price && (
                   <div className="text-[13px] text-neutral-500 line-through mb-1.5">
                     ${p.compareAt.toFixed(2)}
@@ -406,7 +403,7 @@ export default function Product() {
                   <div>
                     <div className="text-[13px] font-medium">🇨🇦 🇺🇸 Canada &amp; US shipping</div>
                     <div className="text-[12px] text-neutral-500">
-                      $14 CAD flat rate · ESD-safe · tracked
+                      $14 USD flat rate · ESD-safe · tracked
                     </div>
                   </div>
                 </div>
@@ -694,6 +691,8 @@ function RecentlyViewedSection({ slugs, currentSlug }) {
 
 function SpecsTable({ p }) {
   const rows = [
+    ["Manufacturer", p.brand],
+    ["Manufacturer Part Number", p.mpn],
     ["Generation", p.generation],
     ["Form Factor", p.formFactor],
     ["Capacity (kit)", p.capacityLabel],

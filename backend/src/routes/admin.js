@@ -149,6 +149,8 @@ router.post(
     body('price').isFloat({ min: 0.01 }).withMessage('Price must be greater than 0'),
     body('stockQuantity').isInt({ min: 0 }).withMessage('Stock quantity must be non-negative'),
     body('description').optional().trim().isLength({ max: 5000 }),
+    body('brand').optional().trim().isLength({ max: 100 }),
+    body('mpn').optional().trim().isLength({ max: 100 }),
   ],
   validate,
   async (req, res) => {
@@ -158,7 +160,7 @@ router.post(
         'slug', 'sku', 'name', 'line', 'generation', 'formFactor', 'capacity',
         'capacityLabel', 'kit', 'speed', 'speedLabel', 'cas', 'timings', 'voltage',
         'ecc', 'rank', 'profile', 'heatspreader', 'rgb', 'condition', 'warranty',
-        'price', 'stockQuantity', 'images', 'description',
+        'price', 'stockQuantity', 'images', 'description', 'brand', 'mpn',
         'metaTitle', 'metaDescription',
       ];
       // Force new products to be active
@@ -201,7 +203,7 @@ router.patch(
         'name', 'line', 'generation', 'formFactor', 'capacity', 'capacityLabel',
         'kit', 'speed', 'speedLabel', 'cas', 'timings', 'voltage', 'ecc', 'rank',
         'profile', 'heatspreader', 'rgb', 'condition', 'warranty', 'price',
-        'stockQuantity', 'images', 'description',
+        'stockQuantity', 'images', 'description', 'brand', 'mpn',
         'metaTitle', 'metaDescription',
       ];
       // Validate line if provided

@@ -1,14 +1,10 @@
 import { Link } from "react-router-dom";
 import { Cpu } from "lucide-react";
-
-// Normalise image: API returns {url, publicId, alt}, local data has plain strings
-function imgUrl(img) {
-  if (!img) return null;
-  if (typeof img === "string") return img;
-  return img.url || null;
-}
+import { imageUrl } from "@/lib/imageUrl";
 
 export default function ProductCard({ p, index = 0 }) {
+  const primaryImage = imageUrl(p.images?.[0]);
+
   return (
     <Link
       to={`/shop/${p.slug}`}
@@ -17,12 +13,14 @@ export default function ProductCard({ p, index = 0 }) {
       data-testid={`product-card-${p.slug}`}
     >
       <div className="relative aspect-[5/4] bg-gradient-to-b from-white/[0.03] to-transparent overflow-hidden">
-        {imgUrl(p.images?.[0]) ? (
+        {primaryImage ? (
           <img
-            src={imgUrl(p.images[0])}
+            src={primaryImage}
             alt={p.name}
             className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform"
-            loading="lazy"
+            loading={index < 6 ? "eager" : "lazy"}
+            fetchPriority={index < 3 ? "high" : "auto"}
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -78,7 +76,7 @@ export default function ProductCard({ p, index = 0 }) {
 
         <div className="mt-auto flex items-end gap-3">
           <div className="text-2xl font-bold tracking-tight">
-            ${p.price.toFixed(2)}
+            ${p.price.toFixed(2)} <span className="text-[10px] font-medium text-neutral-500">USD</span>
           </div>
           {p.compareAt && p.compareAt > p.price && (
             <>

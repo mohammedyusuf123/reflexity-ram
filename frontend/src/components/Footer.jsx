@@ -17,7 +17,7 @@ export default function Footer() {
             </div>
           </div>
           <p className="text-[12px] text-neutral-400 leading-relaxed mb-3">
-            Hardware division of Reflexity.io
+            Independent online memory retailer based in Toronto, Ontario, Canada.
           </p>
           <p className="text-[12px] text-neutral-500">
             DDR4 · DDR5 · Server · Laptop
@@ -35,6 +35,7 @@ export default function Footer() {
             <Link to="/returns" className="text-neutral-300 hover:text-white transition-colors">Returns</Link>
             <Link to="/warranty" className="text-neutral-300 hover:text-white transition-colors">Warranty</Link>
             <Link to="/faq" className="text-neutral-300 hover:text-white transition-colors">FAQ</Link>
+            <Link to="/business-info" className="text-neutral-300 hover:text-white transition-colors">Business information</Link>
           </div>
         </div>
 
@@ -51,12 +52,16 @@ export default function Footer() {
             <span className="dot dot-green pulse-dot" />
             Operational
           </div>
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[12px]">
+            <Link to="/terms" className="text-neutral-400 hover:text-white transition-colors">Terms</Link>
+            <Link to="/privacy" className="text-neutral-400 hover:text-white transition-colors">Privacy</Link>
+          </div>
         </div>
       </div>
 
       {/* BOTTOM: Copyright + License */}
       <div className="container-tight pt-6 border-t border-white/5 mono text-[11px] text-neutral-600 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>© 2026 Reflexity.io Inc.</div>
+        <div>© 2026 Reflexity RAM.</div>
         <div>
           Licensed under the{" "}
           <a

@@ -28,6 +28,8 @@ const productSchema = new mongoose.Schema({
     maxlength: [200, 'Product name too long'],
   },
   description: { type: String, trim: true },
+  brand: { type: String, trim: true },
+  mpn: { type: String, trim: true, uppercase: true },
   line: {
     type: String,
     enum: ['Desktop', 'Laptop', 'Server'],

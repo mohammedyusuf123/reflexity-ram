@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EmptyState from '@/components/EmptyState';
 import useCartStore from '@/lib/cartStore';
+import { imageUrl } from '@/lib/imageUrl';
 
 export default function Cart() {
   const { items, subtotal, itemCount, isLoading, fetchCart, updateItem, removeItem } = useCartStore();
@@ -45,7 +46,7 @@ export default function Cart() {
               {items.map((item) => (
                 <div key={item.slug} className="glass rounded-xl p-5 flex gap-4" data-testid={`cart-item-${item.slug}`}>
                   <div className="w-20 h-20 rounded-lg overflow-hidden bg-white/5 shrink-0">
-                    {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover" />}
+                    {item.image && <img src={imageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <Link to={`/shop/${item.slug}`} className="text-[14px] font-semibold hover:text-white/80 line-clamp-2">
@@ -89,6 +90,7 @@ export default function Cart() {
             {/* Summary */}
             <aside className="glass rounded-2xl p-6 lg:sticky lg:top-24 h-fit" data-testid="cart-summary">
               <h3 className="font-semibold tracking-tight mb-5">Order summary</h3>
+              <p className="text-[11px] text-neutral-500 -mt-3 mb-4">All prices are in USD.</p>
               <div className="space-y-3 text-[13px] mb-5">
                 <div className="flex justify-between text-neutral-300">
                   <span>Subtotal ({itemCount} item{itemCount !== 1 ? 's' : ''})</span>

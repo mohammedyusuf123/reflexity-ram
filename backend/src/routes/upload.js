@@ -1,5 +1,10 @@
 const express = require('express');
-const { uploadProductImages, deleteImage, generateSignedUploadParams } = require('../config/cloudinary');
+const {
+  uploadProductImages,
+  uploadProductImage,
+  deleteImage,
+  generateSignedUploadParams,
+} = require('../config/cloudinary');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -18,18 +23,26 @@ router.post(
       next();
     });
   },
-  (req, res) => {
+  async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No files uploaded' });
     }
-
-    const images = req.files.map(file => ({
-      url: file.path, // Cloudinary URL
-      publicId: file.filename, // Cloudinary public_id
-      alt: file.originalname,
-    }));
-
-    res.json({ images });
+    const uploaded = [];
+    try {
+      for (const file of req.files) {
+        const result = await uploadProductImage(file);
+        uploaded.push({
+          url: result.secure_url,
+          publicId: result.public_id,
+          alt: file.originalname,
+        });
+      }
+      res.json({ images: uploaded });
+    } catch (err) {
+      await Promise.allSettled(uploaded.map((image) => deleteImage(image.publicId)));
+      console.error('Cloudinary upload error:', err);
+      res.status(502).json({ error: 'Image upload failed' });
+    }
   }
 );
 

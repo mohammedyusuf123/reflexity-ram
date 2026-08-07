@@ -1,6 +1,5 @@
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -9,24 +8,9 @@ cloudinary.config({
   secure: true,
 });
 
-// Storage for product images
-const productStorage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => {
-    return {
-      folder: 'reflexity-ram/products',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'avif'],
-      transformation: [
-        { width: 1200, height: 960, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' },
-      ],
-      public_id: `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    };
-  },
-});
-
 // Multer upload for product images (max 5 images, 10MB each)
 const uploadProductImages = multer({
-  storage: productStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: 5 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/avif'];
@@ -37,6 +21,22 @@ const uploadProductImages = multer({
     }
   },
 });
+
+const uploadProductImage = (file) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'reflexity-ram/products',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'avif'],
+        transformation: [
+          { width: 1200, height: 960, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' },
+        ],
+        public_id: `product-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+      },
+      (err, result) => (err ? reject(err) : resolve(result)),
+    );
+    stream.end(file.buffer);
+  });
 
 /**
  * Delete a Cloudinary image by public_id
@@ -74,6 +74,7 @@ const generateSignedUploadParams = () => {
 module.exports = {
   cloudinary,
   uploadProductImages,
+  uploadProductImage,
   deleteImage,
   generateSignedUploadParams,
 };

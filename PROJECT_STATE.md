@@ -2,6 +2,8 @@
 
 ## 2026-08-10 — Repository credential incident remediation
 
+Detailed report: [`docs/security/2026-08-10-credential-exposure-incident.md`](docs/security/2026-08-10-credential-exposure-incident.md)
+
 - VERIFIED (GIT): `backend/.env` was removed from every reachable `main` commit, and historical MongoDB credential URIs, Cloudinary secrets, Resend keys, and authentication-secret assignments were replaced with inert markers. A full reachable-history scan reports zero matching credential values.
 - VERIFIED (STATIC/TEST): `scripts/scan-secrets.mjs` now rejects tracked runtime `.env` files and detects refresh/session/Google client secret assignments in addition to the existing provider patterns. `npm run scan:secrets` passes on the cleaned tree.
 - VERIFIED (GITHUB): The cleaned repository is public again so Render's existing GitHub credential can deploy it. GitHub native secret scanning and push protection are enabled. The connected OAuth token still lacks `workflow` scope, so no Actions workflow was added; native server-side enforcement is active instead.

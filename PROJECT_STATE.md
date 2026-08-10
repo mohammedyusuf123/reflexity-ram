@@ -4,9 +4,11 @@
 
 - VERIFIED (GIT): `backend/.env` was removed from every reachable `main` commit, and historical MongoDB credential URIs, Cloudinary secrets, Resend keys, and authentication-secret assignments were replaced with inert markers. A full reachable-history scan reports zero matching credential values.
 - VERIFIED (STATIC/TEST): `scripts/scan-secrets.mjs` now rejects tracked runtime `.env` files and detects refresh/session/Google client secret assignments in addition to the existing provider patterns. `npm run scan:secrets` passes on the cleaned tree.
-- BLOCKED (GITHUB AUTH): The connected GitHub OAuth token lacks `workflow` scope, so GitHub rejected creation of a push/PR Actions workflow. Native secret scanning or a workflow-authorized token is still required for server-side enforcement.
-- VERIFIED (PROVIDER): The GitHub repository is private. Historical Resend keys are revoked and the current production Resend key does not match either historical key.
-- PENDING (PROVIDER): Rotate the still-valid historical MongoDB database-user password and Cloudinary API secret, update Render, then verify the old credentials fail and production health remains green.
+- VERIFIED (GITHUB): The cleaned repository is public again so Render's existing GitHub credential can deploy it. GitHub native secret scanning and push protection are enabled. The connected OAuth token still lacks `workflow` scope, so no Actions workflow was added; native server-side enforcement is active instead.
+- VERIFIED (PROVIDER/RUNTIME): Historical Resend keys are revoked and the current production Resend key does not match either historical key. The Atlas database-user password was regenerated; the historical URI now fails authentication, the replacement URI succeeds, and Render persisted it.
+- VERIFIED (PROVIDER/RUNTIME): The current Cloudinary product environment is `fike` (renamed from `akbuojoj`). Its Aug 4 root key was not present in Git history, passed a controlled upload/delete test, and is configured in Render. Three unused non-root keys created during remediation are disabled.
+- VERIFIED (DEPLOY/RUNTIME): Render deployment `dep-d9t5ttqfngtc73cqepk0` checked out cleaned commit `a88d3b6`, connected to MongoDB, started the server, and became live. `/api/health` returned `status=ok`; `/api/products?page=1&limit=1` returned one product in the paginated response.
+- OPEN (LEGACY PROVIDER): The exposed credential for historical Cloudinary environment `dfquny0nk` tested active during this incident, but that environment is not in the currently accessible Cloudinary account and is not used by Render. Its owning account must disable that legacy key.
 
 ## 2026-08-10 — Storefront catalog navigation and loading
 

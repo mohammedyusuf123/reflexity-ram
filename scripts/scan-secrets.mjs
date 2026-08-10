@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const root = process.cwd();
 const ignoredDirs = new Set(['.git', 'node_modules', 'dist', 'build', '.cache', '.output']);
@@ -13,8 +14,25 @@ const patterns = [
   { name: 'Resend API key', re: /\bre_[A-Za-z0-9_\-]{20,}\b/ },
   { name: 'Cloudflare token assignment', re: /(?:CLOUDFLARE|CF)_[A-Z0-9_]*(?:TOKEN|KEY|SECRET)\s*=\s*(?!your-|replace-|<|$)[A-Za-z0-9_\-.]{20,}/i },
   { name: 'JWT secret assignment', re: /JWT_SECRET\s*=\s*(?!replace-|your-|<|$)[A-Za-z0-9_\-.]{24,}/i },
+  { name: 'JWT refresh secret assignment', re: /JWT_REFRESH_SECRET\s*=\s*(?!replace-|your-|<|$)[A-Za-z0-9_\-.]{24,}/i },
+  { name: 'Session secret assignment', re: /SESSION_SECRET\s*=\s*(?!replace-|your-|<|$)[A-Za-z0-9_\-.]{24,}/i },
+  { name: 'Google client secret assignment', re: /GOOGLE_CLIENT_SECRET\s*=\s*(?!replace-|your-|<|$)[A-Za-z0-9_\-.]{20,}/i },
   { name: 'Cloudinary API secret assignment', re: /CLOUDINARY_API_SECRET\s*=\s*(?!your-|replace-|<|$)[A-Za-z0-9_\-.]{12,}/i },
 ];
+
+let trackedFiles = [];
+try {
+  trackedFiles = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' })
+    .split('\0')
+    .filter(Boolean);
+} catch {
+  // The content scan still works when the script is run outside a Git checkout.
+}
+
+const trackedEnvFiles = trackedFiles.filter((file) => {
+  const base = path.basename(file);
+  return base === '.env' || (base.startsWith('.env.') && base !== '.env.example');
+});
 
 const textExts = new Set([
   '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.json', '.md', '.txt', '.yml', '.yaml', '.toml', '.env', '.example', '.css', '.html'
@@ -42,6 +60,9 @@ function walk(dir) {
 }
 
 const findings = [];
+for (const file of trackedEnvFiles) {
+  findings.push({ file, line: 1, type: 'Tracked runtime environment file' });
+}
 for (const file of walk(root)) {
   const rel = path.relative(root, file);
   let content;

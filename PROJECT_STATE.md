@@ -1,5 +1,13 @@
 # Project State
 
+## 2026-08-10 — Repository credential incident remediation
+
+- VERIFIED (GIT): `backend/.env` was removed from every reachable `main` commit, and historical MongoDB credential URIs, Cloudinary secrets, Resend keys, and authentication-secret assignments were replaced with inert markers. A full reachable-history scan reports zero matching credential values.
+- VERIFIED (STATIC/TEST): `scripts/scan-secrets.mjs` now rejects tracked runtime `.env` files and detects refresh/session/Google client secret assignments in addition to the existing provider patterns. `npm run scan:secrets` passes on the cleaned tree.
+- BLOCKED (GITHUB AUTH): The connected GitHub OAuth token lacks `workflow` scope, so GitHub rejected creation of a push/PR Actions workflow. Native secret scanning or a workflow-authorized token is still required for server-side enforcement.
+- VERIFIED (PROVIDER): The GitHub repository is private. Historical Resend keys are revoked and the current production Resend key does not match either historical key.
+- PENDING (PROVIDER): Rotate the still-valid historical MongoDB database-user password and Cloudinary API secret, update Render, then verify the old credentials fail and production health remains green.
+
 ## 2026-08-10 — Storefront catalog navigation and loading
 
 - VERIFIED (STATIC): Home and Categories now use `frontend/src/lib/catalog.js` as the source of truth for Desktop, Laptop, and Server URLs (`line=Desktop|Laptop|Server`). Shop still accepts legacy form-factor URLs, including `form=RDIMM&form=LRDIMM` for Server RAM.

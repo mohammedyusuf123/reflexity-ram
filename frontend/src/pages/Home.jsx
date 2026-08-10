@@ -3,6 +3,7 @@ import { Server, Laptop, Monitor, ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import { RAM_CATEGORIES } from "@/lib/catalog";
 import { useSEO } from "@/lib/seo";
 import { useStock } from "@/lib/useStock";
 
@@ -17,7 +18,7 @@ const LANES = [
     title: "Server memory",
     sub: "RDIMM · LRDIMM · ECC",
     body: "Registered DDR4 server pulls, tested and ECC-verified.",
-    to: "/shop?form=RDIMM&form=LRDIMM",
+    to: RAM_CATEGORIES.server.href,
     primary: true,
   },
   {
@@ -25,14 +26,14 @@ const LANES = [
     title: "Laptop",
     sub: "SO-DIMM",
     body: "DDR4 and DDR5 laptop sticks.",
-    to: "/shop?form=SO-DIMM",
+    to: RAM_CATEGORIES.laptop.href,
   },
   {
     icon: Monitor,
     title: "Desktop",
     sub: "UDIMM",
     body: "Standard desktop memory.",
-    to: "/shop?form=UDIMM",
+    to: RAM_CATEGORIES.desktop.href,
   },
 ];
 

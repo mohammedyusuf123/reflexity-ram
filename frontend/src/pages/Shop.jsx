@@ -6,6 +6,11 @@ import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import EmptyState from "@/components/EmptyState";
 import { productsApi } from "@/lib/api";
+import {
+  fetchAllCatalogProducts,
+  getCatalogCategoryLabel,
+  matchesCatalogLines,
+} from "@/lib/catalog";
 import { useSEO } from "@/lib/seo";
 
 // Instant-render fallback while /products/filters loads (and safety net if
@@ -24,29 +29,6 @@ const SORTS = [
   { value: "speed-desc", label: "Speed: Fast → Slow" },
   { value: "capacity-desc", label: "Capacity: High → Low" },
 ];
-
-// Derive a human-readable category label from URL params
-function getCategoryLabel(gen, form, eccOnly) {
-  const serverForms = ["RDIMM", "LRDIMM"];
-  const allServer = serverForms.every((f) => form.includes(f)) && form.length === 2;
-  // Top-level category names (form only, no gen prefix)
-  if ((form.length === 1 || allServer) && gen.length === 0) {
-    const map = { UDIMM: "Desktop RAM", "SO-DIMM": "Laptop RAM", RDIMM: "Server RAM", LRDIMM: "Server RAM" };
-    if (allServer) return "Server RAM";
-    if (map[form[0]]) return map[form[0]];
-  }
-  // Specific sub-category (gen + form)
-  const parts = [];
-  if (gen.length === 1) parts.push(gen[0]);
-  if (form.length === 1) {
-    const map = { UDIMM: "Desktop", "SO-DIMM": "Laptop", RDIMM: "Server", LRDIMM: "Server" };
-    parts.unshift(map[form[0]] || form[0]);
-  } else if (allServer) {
-    parts.unshift("Server");
-  }
-  if (eccOnly) parts.push("ECC");
-  return parts.length ? parts.join(" ") : "All Memory";
-}
 
 export default function Shop() {
   const [params, setParams] = useSearchParams();
@@ -78,12 +60,13 @@ export default function Shop() {
   const q = params.get("q") || "";
   const gen = params.getAll("gen");
   const form = params.getAll("form");
+  const line = params.getAll("line");
   const cap = params.getAll("cap").map(Number);
   const cond = params.getAll("cond");
   const eccOnly = params.get("ecc") === "true";
   const sort = params.get("sort") || "featured";
 
-  const categoryLabel = getCategoryLabel(gen, form, eccOnly);
+  const categoryLabel = getCatalogCategoryLabel(gen, form, line, eccOnly);
 
   useSEO({
     title: `${categoryLabel} — Reflexity RAM`,
@@ -91,16 +74,34 @@ export default function Shop() {
   });
 
   useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
     setLoading(true);
     setError(null);
-    productsApi.list({ limit: 200 })
-      .then(({ data }) => {
-        setProducts(data.products || []);
+    fetchAllCatalogProducts(
+      ({ page, limit, signal }) => productsApi.list(
+        { page, limit, sort: "createdAt", order: "desc" },
+        { signal },
+      ),
+      { signal: controller.signal },
+    )
+      .then((catalogProducts) => {
+        if (active) setProducts(catalogProducts);
       })
-      .catch(() => {
-        setError("Failed to load products. Please refresh.");
+      .catch((requestError) => {
+        if (active && requestError?.name !== "AbortError" && requestError?.code !== "ERR_CANCELED") {
+          setError("Failed to load products. Please refresh.");
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
 
   const update = (key, value) => {
@@ -128,6 +129,7 @@ export default function Shop() {
     let out = products.filter((p) => {
       if (gen.length && !gen.includes(p.generation)) return false;
       if (form.length && !form.includes(p.formFactor)) return false;
+      if (!matchesCatalogLines(p, line)) return false;
       if (cap.length && !cap.includes(p.capacity)) return false;
       if (cond.length && !cond.includes(p.condition)) return false;
       if (eccOnly && !p.ecc) return false;
@@ -150,10 +152,10 @@ export default function Shop() {
       default: break;
     }
     return out;
-  }, [products, q, gen, form, cap, cond, eccOnly, sort]);
+  }, [products, q, gen, form, line, cap, cond, eccOnly, sort]);
 
   const activeCount =
-    gen.length + form.length + cap.length + cond.length + (eccOnly ? 1 : 0) + (q ? 1 : 0);
+    gen.length + form.length + line.length + cap.length + cond.length + (eccOnly ? 1 : 0) + (q ? 1 : 0);
 
   const FilterBody = () => (
     <div className="flex flex-col gap-6">

@@ -3,6 +3,7 @@ const { query: queryValidator, param } = require('express-validator');
 const Order = require('../models/Order');
 const { validate } = require('../middleware/validate');
 const { authenticate, optionalAuth } = require('../middleware/auth');
+const { orderBelongsToUser } = require('../utils/orderAccess');
 
 const router = express.Router();
 
@@ -70,7 +71,7 @@ router.get(
       const isAdmin = req.user?.role === 'admin';
       if (!isAdmin) {
         if (order.user) {
-          if (!req.user || order.user.toString() !== req.user._id.toString()) {
+          if (!req.user || !orderBelongsToUser(order.user, req.user._id)) {
             return res.status(403).json({ error: 'Access denied' });
           }
         } else {

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, User, Menu, X,
-  ChevronDown, LogOut, Settings as SettingsIcon,
+  ChevronDown, LayoutDashboard, LogOut, Settings as SettingsIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import ReflexityMark from "@/components/ReflexityMark";
@@ -129,7 +129,10 @@ export default function Header() {
                         </div>
                       </div>
                       <button
-                        onClick={() => { navigate("/account"); setAccountOpen(false); }}
+                        onClick={() => {
+                          navigate(user.role === "admin" ? "/admin" : "/account");
+                          setAccountOpen(false);
+                        }}
                         className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
                         data-testid="account-dropdown-settings"
                       >

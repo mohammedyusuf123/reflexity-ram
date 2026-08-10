@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Mail } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { RAM_CATEGORIES } from "@/lib/catalog";
 import { useSEO } from "@/lib/seo";
 
 /* ── Custom hardware-oriented SVG icons ──────────────────────────────── */
@@ -90,7 +91,7 @@ const CATEGORIES = [
     title: "Desktop RAM",
     description: "DDR4 and DDR5 memory for gaming and workstation PCs.",
     badge: "UDIMM · DDR4 · DDR5",
-    to: "/shop?form=UDIMM",
+    to: RAM_CATEGORIES.desktop.href,
     Icon: DesktopIcon,
     glow: "rgba(120, 140, 255, 0.08)",
   },
@@ -99,16 +100,16 @@ const CATEGORIES = [
     title: "Laptop RAM",
     description: "SO-DIMM memory for laptops and compact systems.",
     badge: "SO-DIMM · DDR4 · DDR5",
-    to: "/shop?form=SO-DIMM",
+    to: RAM_CATEGORIES.laptop.href,
     Icon: LaptopIcon,
     glow: "rgba(80, 200, 180, 0.07)",
   },
   {
     id: "server",
     title: "Server RAM",
-    description: "ECC RDIMM and enterprise memory inventory.",
-    badge: "RDIMM · ECC · DDR4 · DDR5",
-    to: "/shop?form=RDIMM",
+    description: "ECC RDIMM, LRDIMM, and enterprise memory inventory.",
+    badge: "RDIMM · LRDIMM · ECC · DDR4 · DDR5",
+    to: RAM_CATEGORIES.server.href,
     Icon: ServerIcon,
     glow: "rgba(200, 140, 80, 0.07)",
   },

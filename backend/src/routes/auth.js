@@ -8,7 +8,6 @@ const crypto = require('crypto');
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 const { body } = require('express-validator');
 const User = require('../models/User');
-const Cart = require('../models/Cart');
 const { validate } = require('../middleware/validate');
 const {
   generateAccessToken,
@@ -21,6 +20,7 @@ const {
   sendPasswordResetEmail,
 } = require('../utils/email');
 const { assertPermanentEmail } = require('../utils/disposableEmail');
+const { mergeGuestCartForUser } = require('../utils/guestCartMerge');
 
 const router = express.Router();
 
@@ -62,33 +62,8 @@ router.post(
         emailVerificationExpires: verificationExpires,
       });
 
-      // Merge guest cart if sessionId provided
       const sessionId = req.body.sessionId || req.cookies?.cartSessionId;
-      if (sessionId) {
-        const guestCart = await Cart.findOne({ sessionId });
-        if (guestCart && guestCart.items.length > 0) {
-          let userCart = await Cart.findOne({ user: user._id });
-          if (!userCart) {
-            guestCart.user = user._id;
-            guestCart.sessionId = undefined;
-            await guestCart.save();
-          } else {
-            // Merge items
-            for (const guestItem of guestCart.items) {
-              const existingItem = userCart.items.find(
-                i => i.slug === guestItem.slug
-              );
-              if (existingItem) {
-                existingItem.qty += guestItem.qty;
-              } else {
-                userCart.items.push(guestItem);
-              }
-            }
-            await userCart.save();
-            await Cart.deleteOne({ _id: guestCart._id });
-          }
-        }
-      }
+      await mergeGuestCartForUser(user._id, sessionId);
 
       // Send verification email (non-blocking)
       try {
@@ -166,30 +141,8 @@ router.post(
       user.lastLoginAt = new Date();
       await user.save({ validateBeforeSave: false });
 
-      // Merge guest cart if sessionId provided
       const sessionId = req.body.sessionId || req.cookies?.cartSessionId;
-      if (sessionId) {
-        const guestCart = await Cart.findOne({ sessionId });
-        if (guestCart && guestCart.items.length > 0) {
-          let userCart = await Cart.findOne({ user: user._id });
-          if (!userCart) {
-            guestCart.user = user._id;
-            guestCart.sessionId = undefined;
-            await guestCart.save();
-          } else {
-            for (const guestItem of guestCart.items) {
-              const existingItem = userCart.items.find(i => i.slug === guestItem.slug);
-              if (existingItem) {
-                existingItem.qty += guestItem.qty;
-              } else {
-                userCart.items.push(guestItem);
-              }
-            }
-            await userCart.save();
-            await Cart.deleteOne({ _id: guestCart._id });
-          }
-        }
-      }
+      await mergeGuestCartForUser(user._id, sessionId);
 
       const token = generateAccessToken(user._id);
       setAuthCookie(res, token);
@@ -527,5 +480,3 @@ router.get('/google/callback', async (req, res) => {
 });
 
 module.exports = router;
-
-

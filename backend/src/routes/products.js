@@ -2,6 +2,7 @@ const express = require('express');
 const { query, param } = require('express-validator');
 const Product = require('../models/Product');
 const { validate } = require('../middleware/validate');
+const { normalizeProductPagination, buildProductSort } = require('../utils/pagination');
 
 const router = express.Router();
 
@@ -52,26 +53,24 @@ router.get('/', async (req, res) => {
       filter.$text = { $search: search };
     }
 
-    const sortObj = {};
     const validSortFields = ['price', 'createdAt', 'name', 'speed', 'capacity'];
     const sortField = validSortFields.includes(sort) ? sort : 'createdAt';
-    sortObj[sortField] = order === 'asc' ? 1 : -1;
+    const sortObj = buildProductSort(sortField, order);
 
-    const skip = (Number(page) - 1) * Number(limit);
-    const limitNum = Math.min(Number(limit), 100);
+    const pagination = normalizeProductPagination(page, limit);
 
     const [products, total] = await Promise.all([
-      Product.find(filter).sort(sortObj).skip(skip).limit(limitNum).lean(),
+      Product.find(filter).sort(sortObj).skip(pagination.skip).limit(pagination.limit).lean(),
       Product.countDocuments(filter),
     ]);
 
     res.json({
       products,
       pagination: {
-        page: Number(page),
-        limit: limitNum,
+        page: pagination.page,
+        limit: pagination.limit,
         total,
-        pages: Math.ceil(total / limitNum),
+        pages: Math.ceil(total / pagination.limit),
       },
     });
   } catch (err) {

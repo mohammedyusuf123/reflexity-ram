@@ -8,6 +8,7 @@ const { validate } = require('../middleware/validate');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { sendShippingNotificationEmail } = require('../utils/email');
 const { ensureStripePrice, syncStripeProductDetails } = require('../utils/stripeSync');
+const { cancelOrderAndRestoreStock } = require('../utils/stock');
 
 const router = express.Router();
 
@@ -204,7 +205,7 @@ router.patch(
         'kit', 'speed', 'speedLabel', 'cas', 'timings', 'voltage', 'ecc', 'rank',
         'profile', 'heatspreader', 'rgb', 'condition', 'warranty', 'price',
         'stockQuantity', 'images', 'description', 'brand', 'mpn',
-        'metaTitle', 'metaDescription',
+        'metaTitle', 'metaDescription', 'isActive',
       ];
       // Validate line if provided
       if (req.body.line !== undefined && !['Desktop', 'Laptop', 'Server'].includes(req.body.line)) {
@@ -213,6 +214,9 @@ router.patch(
       // Validate condition if provided
       if (req.body.condition !== undefined && !['New', 'Open Box — Tested', 'Refurbished — Tested', 'Used'].includes(req.body.condition)) {
         return res.status(400).json({ error: 'Invalid condition' });
+      }
+      if (req.body.isActive !== undefined && typeof req.body.isActive !== 'boolean') {
+        return res.status(400).json({ error: 'isActive must be boolean' });
       }
       const updates = {};
       for (const key of allowed) {
@@ -251,18 +255,22 @@ router.patch(
   }
 );
 
-// DELETE /api/admin/products/:id (hard delete)
+// DELETE /api/admin/products/:id (soft deactivate; preserve order/review history)
 router.delete(
   '/products/:id',
   [param('id').custom((v) => isValidObjectId(v)).withMessage('Invalid product ID')],
   validate,
   async (req, res) => {
     try {
-      const product = await Product.findByIdAndDelete(req.params.id);
+      const product = await Product.findByIdAndUpdate(
+        req.params.id,
+        { $set: { isActive: false } },
+        { new: true }
+      );
       if (!product) return res.status(404).json({ error: 'Product not found' });
-      res.json({ message: 'Product deleted' });
+      res.json({ message: 'Product deactivated', product });
     } catch (err) {
-      res.status(500).json({ error: 'Failed to delete product' });
+      res.status(500).json({ error: 'Failed to deactivate product' });
     }
   }
 );
@@ -395,8 +403,16 @@ router.patch(
       if (status === 'delivered') updates.deliveredAt = new Date();
       if (status === 'cancelled') updates.cancelledAt = new Date();
 
-      const order = await Order.findByIdAndUpdate(req.params.id, updates, { new: true })
-        .populate('user', 'firstName lastName email');
+      let order;
+      if (status === 'cancelled') {
+        const cancelledId = await cancelOrderAndRestoreStock(req.params.id, updates);
+        if (!cancelledId) return res.status(404).json({ error: 'Order not found' });
+        order = await Order.findById(cancelledId)
+          .populate('user', 'firstName lastName email');
+      } else {
+        order = await Order.findByIdAndUpdate(req.params.id, updates, { new: true })
+          .populate('user', 'firstName lastName email');
+      }
 
       if (!order) return res.status(404).json({ error: 'Order not found' });
 

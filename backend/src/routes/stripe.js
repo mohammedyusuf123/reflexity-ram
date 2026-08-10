@@ -6,9 +6,10 @@ const Product = require('../models/Product');
 const { optionalAuth } = require('../middleware/auth');
 const { sendOrderConfirmationEmail } = require('../utils/email');
 const { toStripeShippingOptions, ALLOWED_SHIPPING_COUNTRIES } = require('../config/shipping');
-const { decrementStockForOrder } = require('../utils/stock');
+const { decrementStockForOrder, shouldDecrementStockForFulfillment } = require('../utils/stock');
 const { ensureStripePrice } = require('../utils/stripeSync');
 const { isDisposableEmail } = require('../utils/disposableEmail');
+const { isFullyRefundedCharge } = require('../utils/refunds');
 
 const router = express.Router();
 
@@ -114,7 +115,7 @@ const ensureCriticalFulfillmentEffects = async (order) => {
   // stock decrement, a Stripe retry or success-page check must still be able to
   // complete that critical side effect. decrementStockForOrder is idempotent and
   // atomically guarded by order.stockDecremented, so this is safe during races.
-  if (order.stockDecremented !== true) {
+  if (shouldDecrementStockForFulfillment(order)) {
     await decrementStockForOrder(order);
   }
 
@@ -347,30 +348,37 @@ router.post('/webhook', async (req, res) => {
       // ── Charge refunded ───────────────────────────────────────────────────────
       case 'charge.refunded': {
         const charge = event.data.object;
-        // Match by charge ID, falling back to the payment intent ID
-        const order = await Order.findOneAndUpdate(
-          {
-            $or: [
-              { stripeChargeId: charge.id },
-              ...(charge.payment_intent ? [{ stripePaymentIntentId: charge.payment_intent }] : []),
-            ],
-          },
-          {
-            paymentStatus: 'refunded',
-            status: 'refunded',
-            $push: {
-              statusHistory: {
-                status: 'refunded',
-                note: 'Refunded via Stripe',
-                timestamp: new Date(),
-              },
-            },
-          },
-          { new: true }
-        );
+        const orderFilter = {
+          $or: [
+            { stripeChargeId: charge.id },
+            ...(charge.payment_intent ? [{ stripePaymentIntentId: charge.payment_intent }] : []),
+          ],
+        };
+        const order = await Order.findOne(orderFilter);
 
         if (order) {
-          console.log(`💸 Refund processed for order ${order.orderNumber}`);
+          if (isFullyRefundedCharge(charge)) {
+            order.paymentStatus = 'refunded';
+            order.status = 'refunded';
+            order.statusHistory.push({
+              status: 'refunded',
+              note: 'Fully refunded via Stripe; inventory unchanged pending return inspection',
+              timestamp: new Date(),
+            });
+            await order.save();
+            console.log(`💸 Full refund processed for order ${order.orderNumber}`);
+          } else {
+            // A charge.refunded event also fires for partial refunds. Preserve
+            // the order/payment state and leave inventory alone because the
+            // refunded amount does not identify which item quantity returned.
+            order.statusHistory.push({
+              status: order.status,
+              note: `Partial Stripe refund recorded (${charge.amount_refunded || 0} minor currency units); inventory unchanged`,
+              timestamp: new Date(),
+            });
+            await order.save();
+            console.log(`💸 Partial refund recorded for order ${order.orderNumber}`);
+          }
         } else {
           // Fallback: try to find by PI if charge ID wasn't stored yet
           console.warn(`⚠️  No order found for charge ${charge.id} — charge ID may not be stored`);

@@ -1,6 +1,21 @@
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 
+const NON_FULFILLABLE_STATUSES = new Set(['cancelled', 'refunded']);
+const stockDecrementClaimFilter = (orderId) => ({
+  _id: orderId,
+  stockDecremented: { $ne: true },
+  status: { $nin: [...NON_FULFILLABLE_STATUSES] },
+});
+
+// A terminal order must never be decremented again by a delayed Stripe webhook
+// or a repeated session-status recovery call.
+const shouldDecrementStockForFulfillment = (order) => (
+  Boolean(order)
+  && order.stockDecremented !== true
+  && !NON_FULFILLABLE_STATUSES.has(order.status)
+);
+
 // Keep the human-readable stock fields in sync with stockQuantity.
 const deriveStockState = (stockQuantity) => {
   const quantity = Number(stockQuantity);
@@ -10,12 +25,29 @@ const deriveStockState = (stockQuantity) => {
 };
 
 // Re-derive stock/stockLabel for a product after any quantity change.
-const syncStockLabels = async (productId) => {
-  const product = await Product.findById(productId).select('stockQuantity');
+const syncStockLabels = async (productId, session = null) => {
+  const productQuery = Product.findById(productId).select('stockQuantity');
+  if (session) productQuery.session(session);
+  const product = await productQuery;
   if (!product) return;
   await Product.findByIdAndUpdate(productId, {
     $set: deriveStockState(product.stockQuantity),
-  });
+  }, session ? { session } : {});
+};
+
+const withStockTransaction = async (work) => {
+  const session = await Order.startSession();
+  let result = false;
+  try {
+    await session.withTransaction(async () => {
+      // The driver may retry this callback after a transient write conflict.
+      result = false;
+      result = await work(session);
+    });
+    return result;
+  } finally {
+    await session.endSession();
+  }
 };
 
 /**
@@ -33,87 +65,120 @@ const syncStockLabels = async (productId) => {
  * (restock, partial refund, or substitute).
  */
 const decrementStockForOrder = async (order) => {
-  // Atomically claim the decrement. If another path already did it, skip.
-  const claimed = await Order.findOneAndUpdate(
-    { _id: order._id, stockDecremented: { $ne: true } },
-    { $set: { stockDecremented: true } },
-    { new: true }
-  );
-  if (!claimed) return false; // already decremented elsewhere
-
-  const oversoldItems = [];
-
-  for (const item of order.items) {
-    if (!item.product) continue;
-
-    // Fast path: enough stock — take the full quantity atomically.
-    const full = await Product.findOneAndUpdate(
-      { _id: item.product, stockQuantity: { $gte: item.qty } },
-      { $inc: { stockQuantity: -item.qty } },
-      { new: false }
+  return withStockTransaction(async (session) => {
+    // Claim, product updates, and per-item decrement records commit together.
+    const claimed = await Order.findOneAndUpdate(
+      stockDecrementClaimFilter(order._id),
+      { $set: { stockDecremented: true } },
+      { new: true, session }
     );
+    if (!claimed) return false; // already decremented or terminal
 
-    if (full) {
-      item.decrementedQty = item.qty;
-    } else {
-      // Oversold: clamp at zero (aggregation pipeline update is atomic) and
-      // record how many units were actually available to take.
-      const pre = await Product.findOneAndUpdate(
-        { _id: item.product },
-        [{ $set: { stockQuantity: { $max: [0, { $subtract: ['$stockQuantity', item.qty] }] } } }],
-        { new: false }
+    const oversoldItems = [];
+
+    for (const item of claimed.items) {
+      if (!item.product) continue;
+
+      // Fast path: enough stock — take the full quantity atomically.
+      const full = await Product.findOneAndUpdate(
+        { _id: item.product, stockQuantity: { $gte: item.qty } },
+        { $inc: { stockQuantity: -item.qty } },
+        { new: false, session }
       );
-      const available = Math.max(0, pre?.stockQuantity ?? 0);
-      item.decrementedQty = Math.min(available, item.qty);
-      oversoldItems.push(`${item.sku} (wanted ${item.qty}, got ${item.decrementedQty})`);
+
+      if (full) {
+        item.decrementedQty = item.qty;
+      } else {
+        // Oversold: clamp at zero and record the quantity actually available.
+        const pre = await Product.findOneAndUpdate(
+          { _id: item.product },
+          [{ $set: { stockQuantity: { $max: [0, { $subtract: ['$stockQuantity', item.qty] }] } } }],
+          { new: false, session }
+        );
+        const available = Math.max(0, pre?.stockQuantity ?? 0);
+        item.decrementedQty = Math.min(available, item.qty);
+        oversoldItems.push(`${item.sku} (wanted ${item.qty}, got ${item.decrementedQty})`);
+      }
+
+      await syncStockLabels(item.product, session);
     }
 
-    await syncStockLabels(item.product);
-  }
-
-  // Persist per-item decrementedQty so restores are exact.
-  await Order.updateOne({ _id: order._id }, { $set: { items: order.items } });
-
-  if (oversoldItems.length > 0) {
-    const note = `OVERSOLD — needs manual review: ${oversoldItems.join('; ')}`;
-    console.error(`🚨 Order ${order.orderNumber}: ${note}`);
+    // Persist per-item decrementedQty so restores are exact.
     await Order.updateOne(
-      { _id: order._id },
-      {
-        $set: { adminNotes: note },
-        $push: { statusHistory: { status: 'processing', note, timestamp: new Date() } },
-      }
+      { _id: claimed._id },
+      { $set: { items: claimed.items } },
+      { session }
     );
-  }
 
-  return true;
+    if (oversoldItems.length > 0) {
+      const note = `OVERSOLD — needs manual review: ${oversoldItems.join('; ')}`;
+      console.error(`🚨 Order ${claimed.orderNumber}: ${note}`);
+      await Order.updateOne(
+        { _id: claimed._id },
+        {
+          $set: { adminNotes: note },
+          $push: { statusHistory: { status: 'processing', note, timestamp: new Date() } },
+        },
+        { session }
+      );
+    }
+
+    return true;
+  });
 };
 
-/**
- * Restore stock for an order's items (e.g. admin-cancelled after decrement).
- * Only restores if the order actually decremented stock, and restores exactly
- * what was taken (decrementedQty), not the ordered qty — so a clamped
- * oversell decrement never inflates stock on restore.
- */
-const restoreStockForOrder = async (order) => {
+const restoreStockInSession = async (orderId, session) => {
   const claimed = await Order.findOneAndUpdate(
-    { _id: order._id, stockDecremented: true },
+    { _id: orderId, stockDecremented: true },
     { $set: { stockDecremented: false } },
-    { new: true }
+    { new: true, session }
   );
   if (!claimed) return false; // never decremented — nothing to restore
 
-  // Use the claimed (fresh) doc: it has the persisted decrementedQty values.
   for (const item of claimed.items) {
     if (!item.product) continue;
-    const restoreQty = item.decrementedQty ?? item.qty; // legacy orders: full qty
+    const restoreQty = item.decrementedQty ?? item.qty;
     if (restoreQty <= 0) continue;
-    await Product.findByIdAndUpdate(item.product, {
-      $inc: { stockQuantity: restoreQty },
-    });
-    await syncStockLabels(item.product);
+    await Product.findByIdAndUpdate(
+      item.product,
+      { $inc: { stockQuantity: restoreQty } },
+      { session }
+    );
+    await syncStockLabels(item.product, session);
   }
+
   return true;
 };
 
-module.exports = { deriveStockState, syncStockLabels, decrementStockForOrder, restoreStockForOrder };
+/** Restore a previously decremented order atomically. */
+const restoreStockForOrder = async (order) => (
+  withStockTransaction((session) => restoreStockInSession(order._id, session))
+);
+
+/**
+ * Commit cancellation status/history and inventory restoration together. A
+ * crash can therefore leave neither side applied, never a cancelled order
+ * whose stock is still missing.
+ */
+const cancelOrderAndRestoreStock = async (orderId, updates) => {
+  return withStockTransaction(async (session) => {
+    const cancelled = await Order.findByIdAndUpdate(
+      orderId,
+      updates,
+      { new: true, session }
+    );
+    if (!cancelled) return null;
+    await restoreStockInSession(cancelled._id, session);
+    return cancelled._id;
+  });
+};
+
+module.exports = {
+  deriveStockState,
+  syncStockLabels,
+  decrementStockForOrder,
+  restoreStockForOrder,
+  cancelOrderAndRestoreStock,
+  shouldDecrementStockForFulfillment,
+  stockDecrementClaimFilter,
+};

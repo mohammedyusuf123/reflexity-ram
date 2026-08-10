@@ -74,7 +74,7 @@ export const authApi = {
 
 // ─── Products API ─────────────────────────────────────────────────────────────
 export const productsApi = {
-  list: (params) => api.get('/products', { params }),
+  list: (params, config = {}) => api.get('/products', { ...config, params }),
   featured: () => api.get('/products/featured'),
   filters: () => api.get('/products/filters'),
   getBySlug: (slug) => api.get(`/products/${slug}`),

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Plus, Pencil, Trash2, Upload, X, Check, Loader2,
-  Search, ChevronLeft, ChevronRight, ImageIcon, AlertTriangle
+  Search, ChevronLeft, ChevronRight, ImageIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AppLayout from '@/components/AppLayout';
@@ -13,6 +13,7 @@ const EMPTY_PRODUCT = {
   name: '', line: 'Desktop', generation: 'DDR4',
   brand: '', mpn: '', description: '',
   formFactor: 'UDIMM', capacity: 16, speed: 3200, cas: 'CL16', timings: '', voltage: '1.35V',
+  ecc: false,
   condition: 'Used', warranty: '90 Days',
   price: 0, stockQuantity: 0,
   images: [],
@@ -157,12 +158,12 @@ function ProductModal({ product, onClose, onSave }) {
         cas: form.cas,
         timings: form.timings,
         voltage: form.voltage,
+        ecc: Boolean(form.ecc),
         condition: form.condition,
         warranty: form.warranty,
         price: Number(form.price),
         stockQuantity: Number(form.stockQuantity),
         images: form.images,
-        isActive: true,                          // always live on create
       };
       if (!isEdit) {
         data.slug = makeSlug(form.name);
@@ -257,6 +258,12 @@ function ProductModal({ product, onClose, onSave }) {
               <Field label="Voltage">
                 <input className="input" value={form.voltage} onChange={e => setField('voltage', e.target.value)} placeholder="1.35V" />
               </Field>
+              <Field label="ECC">
+                <select className="input" value={form.ecc ? 'yes' : 'no'} onChange={e => setField('ecc', e.target.value === 'yes')}>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </Field>
             </div>
           </div>
 
@@ -266,7 +273,12 @@ function ProductModal({ product, onClose, onSave }) {
               <div className="text-[11px] uppercase tracking-widest text-neutral-500 mb-2">Condition</div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Condition">
-                  <input className="input" value={form.condition} onChange={e => setField('condition', e.target.value)} placeholder="Used" />
+                  <select className="input" value={form.condition} onChange={e => setField('condition', e.target.value)}>
+                    <option>New</option>
+                    <option>Open Box — Tested</option>
+                    <option>Refurbished — Tested</option>
+                    <option>Used</option>
+                  </select>
                 </Field>
                 <Field label="Warranty">
                   <input className="input" value={form.warranty} onChange={e => setField('warranty', e.target.value)} placeholder="90 Days" />
@@ -310,6 +322,8 @@ export default function AdminProducts() {
   const [deletingId, setDeletingId] = useState(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const requestedStock = searchParams.get('stock');
+  const stockFilter = ['in', 'low', 'out'].includes(requestedStock) ? requestedStock : '';
 
   // Quick actions via URL params:
   //  ?new=1        → open the Add modal
@@ -334,9 +348,14 @@ export default function AdminProducts() {
     }
   }, [searchParams]);
 
-  const load = (p = page, q = search) => {
+  const load = (p = page, q = search, stock = stockFilter) => {
     setLoading(true);
-    adminApi.listProducts({ page: p, limit: 15, search: q || undefined })
+    adminApi.listProducts({
+      page: p,
+      limit: 15,
+      search: q || undefined,
+      stock: stock || undefined,
+    })
       .then(({ data }) => {
         setProducts(data.products);
         setPagination(data.pagination);
@@ -345,12 +364,12 @@ export default function AdminProducts() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [page]);
+  useEffect(() => { load(); }, [page, stockFilter]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
-    load(1, search);
+    load(1, search, stockFilter);
   };
 
   const handleSave = (product) => {
@@ -358,15 +377,17 @@ export default function AdminProducts() {
     load();
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Deactivate this product?')) return;
-    setDeletingId(id);
+  const handleStatusChange = async (product) => {
+    const nextActive = !product.isActive;
+    if (!confirm(`${nextActive ? 'Reactivate' : 'Deactivate'} this product?`)) return;
+    setDeletingId(product._id);
     try {
-      await adminApi.deleteProduct(id);
-      toast.success('Product deactivated');
+      if (nextActive) await adminApi.updateProduct(product._id, { isActive: true });
+      else await adminApi.deleteProduct(product._id);
+      toast.success(`Product ${nextActive ? 'reactivated' : 'deactivated'}`);
       load();
     } catch {
-      toast.error('Failed to deactivate');
+      toast.error(`Failed to ${nextActive ? 'reactivate' : 'deactivate'} product`);
     } finally {
       setDeletingId(null);
     }
@@ -388,6 +409,15 @@ export default function AdminProducts() {
             Add product
           </button>
         </div>
+
+        {stockFilter && (
+          <div className="mb-4 flex items-center gap-2 text-[12px] text-amber-300">
+            Showing {stockFilter} stock products
+            <Link to="/admin/products" className="text-neutral-400 hover:text-white underline">
+              Clear filter
+            </Link>
+          </div>
+        )}
 
         {/* Search */}
         <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -485,12 +515,18 @@ export default function AdminProducts() {
                             <Pencil size={13} />
                           </button>
                           <button
-                            onClick={() => handleDelete(p._id)}
+                            onClick={() => handleStatusChange(p)}
                             disabled={deletingId === p._id}
-                            className="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                            title="Deactivate"
+                            className={`p-1.5 rounded-lg text-neutral-500 transition-colors ${
+                              p.isActive
+                                ? 'hover:text-red-400 hover:bg-red-500/10'
+                                : 'hover:text-emerald-400 hover:bg-emerald-500/10'
+                            }`}
+                            title={p.isActive ? 'Deactivate' : 'Reactivate'}
                           >
-                            {deletingId === p._id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                            {deletingId === p._id
+                              ? <Loader2 size={13} className="animate-spin" />
+                              : p.isActive ? <Trash2 size={13} /> : <Check size={13} />}
                           </button>
                         </div>
                       </td>

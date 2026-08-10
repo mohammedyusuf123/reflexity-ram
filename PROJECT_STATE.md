@@ -16,3 +16,11 @@
 - VERIFIED (STATIC): Stock decrement/restoration updates the order guard, all affected products, derived stock labels, and per-item decrement quantities in MongoDB transactions. Admin cancellation status/history and restoration share the same transaction, preventing split-brain cancellation state after a crash.
 - VERIFIED (STATIC): Admin product deletion is now a reversible soft deactivation that preserves product references in orders, carts, and reviews. The product table can reactivate inactive records, and the editor persists the ECC flag.
 - VERIFIED (STATIC): Admin Products now consumes the existing `?stock=in|low|out` quick-action parameter and forwards it to the validated admin API filter.
+
+## 2026-08-10 — Production deployment verification
+
+- VERIFIED (RUNTIME): Cloudflare Pages project `reflexity-ram2` serves `reflexityram.com` and is connected to `mohammedyusuf123/reflexity-ram` on production branch `main`. The previous `reflexityram-create/reflexity-ram` connection was inaccessible and was replaced.
+- VERIFIED (RUNTIME): Cloudflare deployment `6a645d8b` completed successfully from clean commit `01fc9d2d2be886ea3e8d7e1e19403e6dfe292b9a`. A fresh browser journey through Home -> Shop RAM -> Server RAM reached `/shop?line=Server` and rendered both active LRDIMM products.
+- VERIFIED (RUNTIME): Desktop and Laptop category cards reach `/shop?line=Desktop` and `/shop?line=Laptop`; production currently has zero active inventory for both lines and renders the category-specific empty state.
+- VERIFIED (RUNTIME): `https://reflexity-ram.onrender.com/api/products?page=bogus&limit=0` returns normalized `page: 1` and `limit: 24`, confirming the updated backend pagination path is deployed. `/api/health` reports `status: ok` and `env: production`.
+- UNKNOWN: MongoDB transaction rollback and Stripe webhook/cancellation races are covered by guard/helper unit tests and independent static review, but no disposable Atlas integration database was available for route-level rollback testing.

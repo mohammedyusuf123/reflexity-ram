@@ -32,6 +32,7 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 - **2026-08-10:** MongoDB credentials were rotated; Resend revocation was verified; Render was updated; the current Cloudinary environment was validated; GitHub secret scanning and push protection were enabled.
 - **2026-08-10 23:30 UTC:** Render deployment `dep-d9t5ttqfngtc73cqepk0` connected to MongoDB, started the application, and became live.
 - **2026-08-10:** Closure evidence was recorded in commit `56e8eda`.
+- **2026-08-11 00:09 UTC:** The active Atlas URI was displayed during interactive transaction-test setup and was treated as exposed. The password was rotated again, Render was updated, and deployment `dep-d9t6g5egekts73cbjhqg` connected successfully and became live.
 
 ## Remediation completed
 
@@ -56,6 +57,7 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 - Validated the current Cloudinary credential with a controlled upload and cleanup.
 - Disabled three unused non-root Cloudinary keys created during remediation.
 - Confirmed Render checked out cleaned commit `a88d3b6`, connected to MongoDB, started on port 3001, and reported the service live.
+- Re-rotated the Atlas database-user password after the interactive display, verified the replacement directly, removed the disposable transaction-test database and temporary user, and confirmed the replacement Render deployment became live.
 
 ## Verification evidence
 
@@ -72,6 +74,8 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 | GitHub push protection | Enabled |
 | `GET /api/health` | `status=ok` |
 | `GET /api/products?page=1&limit=1` | Valid paginated response containing one product |
+| Atlas rollback integration | Pass against isolated Atlas database; exact-marker cleanup left zero fixtures |
+| Render deployment after follow-up rotation | `dep-d9t6g5egekts73cbjhqg` live with MongoDB connected |
 
 The broad example-pattern scan still recognizes documentation placeholders such as `<user>:<password>` and dummy `re_...` examples in old documentation revisions. Exact-value scans and the repository scanner distinguish those inert examples from the exposed credentials.
 

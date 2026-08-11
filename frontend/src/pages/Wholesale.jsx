@@ -5,6 +5,9 @@ import Footer from "@/components/Footer";
 import { useSEO } from "@/lib/seo";
 import "@/pages/wholesale-concepts.css";
 
+const WHOLESALE_GMAIL_URL =
+  "https://mail.google.com/mail/?view=cm&fs=1&to=reflexityram@gmail.com&su=Wholesale%20RAM%20request";
+
 export default function Wholesale() {
   useSEO({
     title: "Wholesale DDR4 & DDR5 RAM | Reflexity",
@@ -57,7 +60,9 @@ export default function Wholesale() {
               </div>
               <a
                 className="ws-contact-link"
-                href="mailto:reflexityram@gmail.com?subject=Wholesale%20RAM%20request"
+                href={WHOLESALE_GMAIL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 Email the wholesale desk
               </a>

@@ -25,6 +25,7 @@ Detailed report: [`docs/security/2026-08-10-credential-exposure-incident.md`](do
 ## 2026-08-10 — Storefront catalog navigation and loading
 
 - VERIFIED (STATIC/BUILD): Shared desktop/mobile navigation order is `Shop RAM`, `Wholesale`, `Liquidation`, `Support`, `Guides`. Frontend tests and the Vite production build pass with this order.
+- VERIFIED (RUNTIME): Wholesale email CTA uses an HTTPS Gmail compose URL instead of relying on an operating-system `mailto:` handler. Production opens a new Gmail compose tab addressed to `reflexityram@gmail.com` with subject `Wholesale RAM request`; commit `e9263d6` is live.
 - VERIFIED (STATIC): Home and Categories now use `frontend/src/lib/catalog.js` as the source of truth for Desktop, Laptop, and Server URLs (`line=Desktop|Laptop|Server`). Shop still accepts legacy form-factor URLs, including `form=RDIMM&form=LRDIMM` for Server RAM.
 - VERIFIED (STATIC): The Shop catalog loader requests every `/api/products` page at the backend-supported 100-item size, forwards cancellation through Axios, and orders same-timestamp records by identifier for stable display.
 - VERIFIED (STATIC): `Header.jsx` imports `LayoutDashboard`, which is rendered for authenticated mobile admins.

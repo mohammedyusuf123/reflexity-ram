@@ -7,7 +7,7 @@
 - VERIFIED (RUNTIME): A manual deploy of the same commit connected to MongoDB and became live at 8:09 PM after the credential was corrected. Commit `14ed06b` then deployed successfully and became live at 8:14 PM.
 - VERIFIED (RUNTIME): Production returned HTTP 200 for backend health, normalized product pagination, product feed, dynamic sitemap, storefront home, Server shop, wholesale, support, terms, and privacy. The Server shop rendered both active products. Health reported `env=production` and Stripe enabled.
 - VERIFIED (TEST/BUILD): Secret scanning passed; all five frontend tests and ten runnable backend tests passed; the Atlas transaction test remained intentionally skipped without a disposable test database; the Vite production build succeeded.
-- VERIFIED (STATIC/TEST): Local backend cleanup replaces Mongoose 9's deprecated `new: true` update option with `returnDocument: 'after'` and removes duplicate Order/Cart schema-index declarations. Model loading produced no duplicate-index or deprecation warnings. These warning-only cleanup changes are local and not yet deployed.
+- VERIFIED (STATIC/TEST/RUNTIME): Backend cleanup in commit `6571815` replaces Mongoose 9's deprecated `new: true` update option with `returnDocument: 'after'` and removes duplicate Order/Cart schema-index declarations. Model loading produced no duplicate-index or deprecation warnings locally, and the 9:31 PM Render startup connected to MongoDB and reached live status without those warnings.
 - VERIFIED (RUNTIME): Both active product images still use the legacy `dfquny0nk` delivery hostname, but the exact legacy and current `fike` URLs return HTTP 200. This is data-hygiene debt, not the cause of the Render outage.
 
 ## 2026-08-10 — Repository credential incident remediation

@@ -34,6 +34,7 @@ const TABS = [
   { id: "compat", label: "Compatibility" },
   { id: "shipping", label: "Shipping" },
   { id: "warranty", label: "Warranty" },
+  { id: "reviews", label: "Reviews" },
 ];
 
 export default function Product() {
@@ -450,6 +451,9 @@ export default function Product() {
                   data-testid={`product-tab-${t.id}`}
                 >
                   {t.label}
+                  {t.id === "reviews" && reviewData.summary.count > 0
+                    ? ` (${reviewData.summary.count})`
+                    : ""}
                 </button>
               ))}
             </div>
@@ -508,10 +512,11 @@ export default function Product() {
                   </p>
                 </div>
               )}
+              {tab === "reviews" && (
+                <ReviewsSection product={p} data={reviewData} onUpdated={setReviewData} embedded />
+              )}
             </div>
           </div>
-
-          <ReviewsSection product={p} data={reviewData} onUpdated={setReviewData} />
 
           {/* Related */}
           {related.length > 0 && (
@@ -573,7 +578,7 @@ export default function Product() {
   );
 }
 
-function ReviewsSection({ product, data, onUpdated }) {
+function ReviewsSection({ product, data, onUpdated, embedded = false }) {
   const user = useAuthStore((s) => s.user);
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState("");
@@ -599,7 +604,10 @@ function ReviewsSection({ product, data, onUpdated }) {
   };
 
   return (
-    <section className="mt-16 border-t border-white/5 pt-10" data-testid="product-reviews">
+    <section
+      className={embedded ? "" : "mt-16 border-t border-white/5 pt-10"}
+      data-testid="product-reviews"
+    >
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
           <div className="section-label mb-3"><span className="num">REVIEWS</span> VERIFIED BUYERS</div>

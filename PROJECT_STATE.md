@@ -56,3 +56,9 @@ Detailed report: [`docs/security/2026-08-10-credential-exposure-incident.md`](do
 
 - VERIFIED (SECURITY/PROVIDER): The production Atlas URI was displayed during interactive verification and was treated as exposed. Its password was rotated again, the previous password was revoked, and Render now stores the replacement URI.
 - VERIFIED (DEPLOY/RUNTIME): Render deployment `dep-d9t6g5egekts73cbjhqg` connected to MongoDB with the rotated credential, started the API, and became live. `/api/health` returned HTTP 200 with `env: production`; the normalized product pagination probe returned the two active products.
+
+## 2026-08-11 — Product review placement
+
+- VERIFIED (STATIC/TEST/BUILD): Product reviews are a fifth product-detail tab beside Specifications, Compatibility, Shipping, and Warranty. The tab shows the approved-review count when nonzero and contains the existing public review list plus verified-purchaser submission form; the former duplicate section below the tabs was removed. Frontend tests and the Vite production build pass.
+- VERIFIED (LOCAL RUNTIME): The Reviews tab rendered on the local Samsung 64GB product page through the live catalog API. A browser-only review card labeled `LOCAL DEMO — NOT PUBLISHED` was used to verify the populated layout and was not saved to source or the database.
+- VERIFIED (STATIC): On-site product reviews remain separate from Google Customer Reviews. Google survey opt-in is rendered only on order success and does not populate the storefront review database.

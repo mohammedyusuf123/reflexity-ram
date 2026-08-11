@@ -206,7 +206,7 @@ async function seed() {
       await Product.findOneAndUpdate(
         { slug: productData.slug },
         productData,
-        { upsert: true, new: true, runValidators: true }
+        { upsert: true, returnDocument: 'after', runValidators: true }
       );
       console.log(`  ✓ Product: ${productData.name}`);
     }

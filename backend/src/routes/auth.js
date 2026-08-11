@@ -334,7 +334,7 @@ router.patch(
       if (defaultAddress) updates.defaultAddress = defaultAddress;
 
       const user = await User.findByIdAndUpdate(req.user._id, updates, {
-        new: true,
+        returnDocument: 'after',
         runValidators: true,
       });
 

@@ -1,5 +1,15 @@
 # Project State
 
+## 2026-08-10 — Render 8 PM failure investigation
+
+- VERIFIED (GMAIL/RENDER): Render sent a deploy-failed notification at 8:06 PM and instance-failure notifications at 8:07–8:09 PM for commit `4116811`.
+- VERIFIED (RUNTIME LOG): The failed instances exited because MongoDB rejected authentication. This was an environment credential problem, not a build/compiler failure in commit `4116811`.
+- VERIFIED (RUNTIME): A manual deploy of the same commit connected to MongoDB and became live at 8:09 PM after the credential was corrected. Commit `14ed06b` then deployed successfully and became live at 8:14 PM.
+- VERIFIED (RUNTIME): Production returned HTTP 200 for backend health, normalized product pagination, product feed, dynamic sitemap, storefront home, Server shop, wholesale, support, terms, and privacy. The Server shop rendered both active products. Health reported `env=production` and Stripe enabled.
+- VERIFIED (TEST/BUILD): Secret scanning passed; all five frontend tests and ten runnable backend tests passed; the Atlas transaction test remained intentionally skipped without a disposable test database; the Vite production build succeeded.
+- VERIFIED (STATIC/TEST): Local backend cleanup replaces Mongoose 9's deprecated `new: true` update option with `returnDocument: 'after'` and removes duplicate Order/Cart schema-index declarations. Model loading produced no duplicate-index or deprecation warnings. These warning-only cleanup changes are local and not yet deployed.
+- VERIFIED (RUNTIME): Both active product images still use the legacy `dfquny0nk` delivery hostname, but the exact legacy and current `fike` URLs return HTTP 200. This is data-hygiene debt, not the cause of the Render outage.
+
 ## 2026-08-10 — Repository credential incident remediation
 
 Detailed report: [`docs/security/2026-08-10-credential-exposure-incident.md`](docs/security/2026-08-10-credential-exposure-incident.md)
@@ -14,6 +24,7 @@ Detailed report: [`docs/security/2026-08-10-credential-exposure-incident.md`](do
 
 ## 2026-08-10 — Storefront catalog navigation and loading
 
+- VERIFIED (STATIC/BUILD): Shared desktop/mobile navigation order is `Shop RAM`, `Wholesale`, `Liquidation`, `Support`, `Guides`. Frontend tests and the Vite production build pass with this order.
 - VERIFIED (STATIC): Home and Categories now use `frontend/src/lib/catalog.js` as the source of truth for Desktop, Laptop, and Server URLs (`line=Desktop|Laptop|Server`). Shop still accepts legacy form-factor URLs, including `form=RDIMM&form=LRDIMM` for Server RAM.
 - VERIFIED (STATIC): The Shop catalog loader requests every `/api/products` page at the backend-supported 100-item size, forwards cancellation through Axios, and orders same-timestamp records by identifier for stable display.
 - VERIFIED (STATIC): `Header.jsx` imports `LayoutDashboard`, which is rendered for authenticated mobile admins.

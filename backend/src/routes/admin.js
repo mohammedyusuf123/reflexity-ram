@@ -234,7 +234,7 @@ router.patch(
       const product = await Product.findByIdAndUpdate(
         req.params.id,
         { $set: updates },
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
       );
       if (!product) return res.status(404).json({ error: 'Product not found' });
 
@@ -265,7 +265,7 @@ router.delete(
       const product = await Product.findByIdAndUpdate(
         req.params.id,
         { $set: { isActive: false } },
-        { new: true }
+        { returnDocument: 'after' }
       );
       if (!product) return res.status(404).json({ error: 'Product not found' });
       res.json({ message: 'Product deactivated', product });
@@ -293,7 +293,7 @@ router.patch(
       const product = await Product.findByIdAndUpdate(
         req.params.id,
         stockUpdates,
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
       );
       if (!product) return res.status(404).json({ error: 'Product not found' });
       res.json({ product });
@@ -410,7 +410,7 @@ router.patch(
         order = await Order.findById(cancelledId)
           .populate('user', 'firstName lastName email');
       } else {
-        order = await Order.findByIdAndUpdate(req.params.id, updates, { new: true })
+        order = await Order.findByIdAndUpdate(req.params.id, updates, { returnDocument: 'after' })
           .populate('user', 'firstName lastName email');
       }
 
@@ -446,7 +446,7 @@ router.patch(
       const order = await Order.findByIdAndUpdate(
         req.params.id,
         { archived: req.body.archived },
-        { new: true }
+        { returnDocument: 'after' }
       );
       if (!order) return res.status(404).json({ error: 'Order not found' });
       res.json({ order });
@@ -527,7 +527,7 @@ router.patch(
         return res.status(400).json({ error: 'No valid fields to update' });
       }
 
-      const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
+      const user = await User.findByIdAndUpdate(req.params.id, updates, { returnDocument: 'after' });
       if (!user) return res.status(404).json({ error: 'User not found' });
       res.json({ user });
     } catch (err) {

@@ -88,7 +88,6 @@ const orderSchema = new mongoose.Schema({
 });
 
 orderSchema.index({ user: 1, createdAt: -1 });
-orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ status: 1 });
 // UNIQUE: the DB enforces one order per PaymentIntent even if the app-level
 // duplicate check races (two simultaneous submissions of the same PI).

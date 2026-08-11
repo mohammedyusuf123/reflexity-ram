@@ -18,9 +18,8 @@ const cartSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    sparse: true,
   },
-  sessionId: { type: String, sparse: true }, // For guest carts
+  sessionId: { type: String }, // For guest carts
   items: [cartItemSchema],
   couponCode: { type: String },
   discount: { type: Number, default: 0 },

@@ -112,7 +112,9 @@ html.dark .ws-pitch h1 em { color: #f0d36f; }
 .ws-coming-list { display: grid; gap: 11px; margin-top: 25px; padding: 20px 0; border-block: 1px solid var(--ws-line); }
 .ws-coming-list span { display: flex; align-items: center; gap: 10px; color: var(--ws-soft); font-size: 11px; }
 .ws-coming-list svg { color: #c99e0a; }
-.ws-closed-note { margin-top: 20px; padding: 13px 15px; border-left: 2px solid #c99e0a; color: var(--ws-faint); background: rgba(255,207,36,.04); font: 600 9px/1.4 monospace; }
+.ws-contact-link { display: inline-flex; align-items: center; justify-content: center; margin-top: 20px; padding: 13px 17px; border: 1px solid rgba(198,155,8,.4); border-radius: 4px; color: #171815; background: #ffcf24; font: 700 10px/1.4 monospace; letter-spacing: .04em; text-decoration: none; transition: transform .18s ease, background .18s ease; }
+.ws-contact-link:hover { background: #f4c213; transform: translateY(-1px); }
+.ws-contact-link:focus-visible { outline: 2px solid #ffcf24; outline-offset: 3px; }
 
 .wholesale-simple-shell > footer { margin-top: 0; }
 

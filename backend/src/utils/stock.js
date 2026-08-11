@@ -70,7 +70,7 @@ const decrementStockForOrder = async (order) => {
     const claimed = await Order.findOneAndUpdate(
       stockDecrementClaimFilter(order._id),
       { $set: { stockDecremented: true } },
-      { new: true, session }
+      { returnDocument: 'after', session }
     );
     if (!claimed) return false; // already decremented or terminal
 
@@ -131,7 +131,7 @@ const restoreStockInSession = async (orderId, session) => {
   const claimed = await Order.findOneAndUpdate(
     { _id: orderId, stockDecremented: true },
     { $set: { stockDecremented: false } },
-    { new: true, session }
+    { returnDocument: 'after', session }
   );
   if (!claimed) return false; // never decremented — nothing to restore
 
@@ -165,7 +165,7 @@ const cancelOrderAndRestoreStock = async (orderId, updates) => {
     const cancelled = await Order.findByIdAndUpdate(
       orderId,
       updates,
-      { new: true, session }
+      { returnDocument: 'after', session }
     );
     if (!cancelled) return null;
     await restoreStockInSession(cancelled._id, session);

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Clock3, PackageCheck, ShieldCheck } from "lucide-react";
+import { Mail, PackageCheck, ShieldCheck } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useSEO } from "@/lib/seo";
@@ -7,9 +7,9 @@ import "@/pages/wholesale-concepts.css";
 
 export default function Wholesale() {
   useSEO({
-    title: "Wholesale RAM — Coming Soon | Reflexity",
+    title: "Wholesale DDR4 & DDR5 RAM | Reflexity",
     description:
-      "Reflexity's wholesale DDR4 and DDR5 RAM buying, selling, and sourcing desk is coming soon.",
+      "Contact Reflexity's Toronto wholesale desk to buy, sell, or source exact-SKU DDR4 and DDR5 RAM.",
   });
 
   return (
@@ -38,23 +38,29 @@ export default function Wholesale() {
               <p className="ws-retail-link">Need only one or two sticks? <Link to="/shop">Shop retail stock.</Link></p>
             </div>
 
-            <div className="ws-coming" aria-labelledby="wholesale-coming-title">
+            <div className="ws-coming" aria-labelledby="wholesale-desk-title">
               <div className="ws-coming-top">
                 <span>REFLEXITY WHOLESALE DESK</span>
-                <div><i /> COMING SOON</div>
+                <div><i /> DIRECT CONTACT</div>
               </div>
-              <div className="ws-coming-icon"><Clock3 size={27} /></div>
-              <h2 id="wholesale-coming-title">Wholesale access is being prepared.</h2>
+              <div className="ws-coming-icon"><Mail size={27} /></div>
+              <h2 id="wholesale-desk-title">Send the exact requirement.</h2>
               <p>
-                We are building a direct workflow for bulk buying, inventory offers,
-                and exact-requirement sourcing.
+                Include the part number, form factor, capacity, speed, quantity,
+                condition, destination, and deadline. We confirm availability,
+                source, and responsibility before quoting.
               </p>
               <div className="ws-coming-list">
                 <span><PackageCheck size={15} /> Buy bulk DDR4 and DDR5 memory</span>
                 <span><PackageCheck size={15} /> Submit wholesale inventory</span>
                 <span><PackageCheck size={15} /> Request hard-to-find configurations</span>
               </div>
-              <div className="ws-closed-note">Requests and submissions are currently closed.</div>
+              <a
+                className="ws-contact-link"
+                href="mailto:reflexityram@gmail.com?subject=Wholesale%20RAM%20request"
+              >
+                Email the wholesale desk
+              </a>
             </div>
           </div>
         </section>

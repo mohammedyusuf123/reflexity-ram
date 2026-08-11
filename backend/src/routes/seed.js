@@ -58,7 +58,11 @@ router.post('/', async (req, res) => {
   try {
     let upserted = 0;
     for (const p of products) {
-      await Product.findOneAndUpdate({ slug: p.slug }, { $set: p }, { upsert: true, new: true, runValidators: true });
+      await Product.findOneAndUpdate(
+        { slug: p.slug },
+        { $set: p },
+        { upsert: true, returnDocument: 'after', runValidators: true }
+      );
       upserted++;
     }
     results.products = upserted;

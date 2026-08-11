@@ -58,7 +58,7 @@ router.put(
           html: clean,
           updatedBy: req.user._id,
         },
-        { new: true, upsert: true, setDefaultsOnInsert: true }
+        { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
       );
 
       res.json({

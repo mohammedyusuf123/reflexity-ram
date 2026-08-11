@@ -41,7 +41,7 @@ async function fixMerchantProductData() {
     const product = await Product.findOneAndUpdate(
       { sku: correction.sku, brand: { $exists: false } },
       { $set: correction.values },
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     );
     if (!product) continue;
     updated += 1;

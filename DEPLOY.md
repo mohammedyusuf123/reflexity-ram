@@ -11,7 +11,7 @@ reflexityram.com
   Root directory: frontend
   Build command: npm ci && npm run build
   Output directory: dist
-  Pages Functions: /feed.xml and /sitemap.xml
+  Pages Functions: /feed.xml, /sitemap.xml, and /shop/:slug metadata
 
 https://reflexity-ram.onrender.com
   Render service root: backend
@@ -145,11 +145,17 @@ The file-routed functions are:
 ```text
 frontend/functions/feed.xml.js
 frontend/functions/sitemap.xml.js
+frontend/functions/shop/[slug].js
 ```
 
-They fetch the backend's live XML and return `X-Reflexity-Source:
-live-catalog-api`. `frontend/public/_routes.json` limits Function invocation to
-those two paths, keeping normal storefront assets static.
+The XML functions fetch the backend's live XML and return
+`X-Reflexity-Source: live-catalog-api`. The product function uses the exact
+public product API response to inject raw title, description, canonical, and
+social metadata for crawlers. It returns `X-Reflexity-SEO: product-edge`, falls
+back to the unchanged app shell if the API is slow or unavailable, and emits a
+404 with `noindex` only after the API confirms that a slug does not exist.
+`frontend/public/_routes.json` limits Function invocation to those three route
+patterns, keeping all other storefront assets static.
 
 Local Pages verification:
 
@@ -158,6 +164,7 @@ cd frontend
 npx wrangler pages dev ./dist --port 8788
 curl -i http://127.0.0.1:8788/feed.xml
 curl -i http://127.0.0.1:8788/sitemap.xml
+curl -i http://127.0.0.1:8788/shop/<current-product-slug>
 ```
 
 ## 6. Post-deploy verification
@@ -167,6 +174,7 @@ curl -fsSI https://reflexityram.com/
 curl -fsSI https://reflexityram.com/feed.xml
 curl -fsSI https://reflexityram.com/sitemap.xml
 curl -fsS https://reflexityram.com/robots.txt
+curl -fsS -D - https://reflexityram.com/shop/<current-product-slug>
 ```
 
 Required checks:
@@ -177,8 +185,11 @@ Required checks:
 4. Feed and sitemap include `X-Reflexity-Source: live-catalog-api`.
 5. Feed item count, prices, currency, stock state, and image URLs match the API.
 6. Sitemap contains all indexable public routes plus every active product.
-7. `/admin` APIs return 401 without an authenticated admin token.
-8. A disallowed CORS origin receives no access-control permission.
+7. Every current product's raw HTML has `X-Reflexity-SEO: product-edge`, its
+   exact title, an absolute canonical URL, and an absolute social image URL.
+8. A definitely absent product slug returns 404 with `noindex` metadata.
+9. `/admin` APIs return 401 without an authenticated admin token.
+10. A disallowed CORS origin receives no access-control permission.
 
 Do not place a live order merely as a deployment smoke test. Use Stripe test
 mode and isolated data for end-to-end payment verification.

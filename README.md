@@ -19,8 +19,10 @@ Production ecommerce storefront for tested server, desktop, and laptop memory.
 | Hosting | Cloudflare Pages frontend, Render backend |
 
 Cloudflare Pages Functions serve `/feed.xml` and `/sitemap.xml` from the live
-catalog API. They must not be replaced by checked-in product snapshots: stock,
-price, and availability need to follow MongoDB automatically.
+catalog API and enrich raw `/shop/:slug` HTML with product-specific title,
+description, canonical, and social metadata. The XML must not be replaced by
+checked-in product snapshots: stock, price, and availability need to follow
+MongoDB automatically.
 
 ## Local setup
 
@@ -82,7 +84,7 @@ Production deploys from `main`:
 
 - Render builds and starts `backend/`.
 - Cloudflare Pages project `reflexity-ram2` builds `frontend/` and discovers
-  the two file-routed Pages Functions.
+  the file-routed XML and product-metadata Pages Functions.
 
 See [DEPLOY.md](./DEPLOY.md) for the exact configuration and post-deploy checks.
 Current operational evidence and known limitations live in

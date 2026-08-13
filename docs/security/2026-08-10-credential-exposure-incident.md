@@ -2,7 +2,7 @@
 
 ## Status
 
-**Contained with one legacy-provider action remaining.** The live Reflexity RAM deployment is healthy and uses rotated or otherwise confirmed-safe production credentials. Access to the historical Cloudinary environment `dfquny0nk` was later recovered, but its sole exposed Root key remains active pending Cloudinary Support ticket `#383469`. Render does not use that key.
+**Contained and provider rotation verified.** The live Reflexity RAM deployment is healthy and uses rotated or otherwise confirmed-safe credentials. Cloudinary Support rotated the exposed historical Root key for `dfquny0nk` on 2026-08-13 after ownership verification on ticket `#383488`, linked to duplicate ticket `#383469`. The historical credential returned HTTP 200 immediately before rotation and HTTP 401 afterward. Render does not use the historical environment.
 
 This report deliberately contains no credentials, tokens, passwords, or reusable secret fragments.
 
@@ -20,7 +20,7 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 |---|---|---|---|
 | MongoDB Atlas database-user credential | Present in historical Git commits and valid when tested | Database-user password regenerated; historical URI now fails authentication | Replacement URI validated and saved in Render |
 | Resend API keys | Two historical keys present in Git history | Both historical keys revoked; current key differs from them | Current production key retained |
-| Cloudinary historical environment `dfquny0nk` | Historical credential present in Git and active when tested | Owner access recovered; authenticated support ticket `#383469` is open for sole-key rotation | Not used by current Render deployment; active product records were migrated to `fike` in commit `f0d31a3` |
+| Cloudinary historical environment `dfquny0nk` | Historical credential present in Git and active when tested | Cloudinary Support rotated the key after ownership verification; historical credential now fails with HTTP 401 | Not used by current Render deployment; active product records were migrated to `fike` in commit `f0d31a3` |
 | Cloudinary current environment `fike` | Current Aug 4 root key was not found in Git history | Controlled upload/delete validation passed; three unused remediation keys disabled | Current Render configuration retained |
 | JWT, session, admin, and seed values | Historical assignments were present | Historical authentication values tested invalid or were replaced | Current runtime values retained |
 
@@ -36,8 +36,11 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 - **2026-08-10:** Closure evidence was recorded in commit `56e8eda`.
 - **2026-08-11 00:09 UTC:** The active Atlas URI was displayed during interactive transaction-test setup and was treated as exposed. The password was rotated again, Render was updated, and deployment `dep-d9t6g5egekts73cbjhqg` connected successfully and became live.
 - **2026-08-12:** Located the authorized owner account for legacy Cloudinary environment `dfquny0nk`; confirmed it has one active Root key, no Account Management Keys entry, and no enabled whole-environment switch.
-- **2026-08-13:** Submitted authenticated Cloudinary Support ticket `#383469` requesting rotation or revocation of the sole exposed Root key while preserving all assets and public delivery. The ticket remains open.
+- **2026-08-13:** Submitted authenticated Cloudinary Support ticket `#383469` requesting rotation or revocation of the sole exposed Root key while preserving all assets and public delivery.
 - **2026-08-13:** Deployed commit `f0d31a3`; Render's idempotent startup migration replaced the two exact legacy product-image URLs with `fike` copies. The public API, live feed, and product metadata now contain zero `dfquny0nk` references.
+- **2026-08-13 08:18 America/Toronto:** Supplied Cloudinary's requested ownership verification on ticket `#383488` and linked duplicate ticket `#383469`.
+- **2026-08-13 08:46 America/Toronto:** Cloudinary Support confirmed that it had rotated the exposed key.
+- **2026-08-13 after rotation:** The historical Admin API credential changed from HTTP 200 to HTTP 401. The console showed one active replacement created that day whose public identifier differed from the historical key. The storefront, backend health, product API, live feed, two current `fike` images, and both known legacy public images remained HTTP 200.
 
 ## Remediation completed
 
@@ -61,6 +64,7 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 - Confirmed the current Cloudinary environment is `fike`, renamed from `akbuojoj`.
 - Validated the current Cloudinary credential with a controlled upload and cleanup.
 - Disabled three unused non-root Cloudinary keys created during remediation.
+- Had Cloudinary Support rotate the exposed Root key for historical environment `dfquny0nk`; verified that the old credential now fails authentication and the replacement public key identifier differs from it.
 - Migrated both active product image records to verified `fike` copies and removed the frontend legacy-host compatibility rewrite.
 - Confirmed Render checked out cleaned commit `a88d3b6`, connected to MongoDB, started on port 3001, and reported the service live.
 - Re-rotated the Atlas database-user password after the interactive display, verified the replacement directly, removed the disposable transaction-test database and temporary user, and confirmed the replacement Render deployment became live.
@@ -83,19 +87,22 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 | Atlas rollback integration | Pass against isolated Atlas database; exact-marker cleanup left zero fixtures |
 | Render deployment after follow-up rotation | `dep-d9t6g5egekts73cbjhqg` live with MongoDB connected |
 | Active product image URLs after `f0d31a3` | Public API, live feed, and raw product metadata use only `fike`; both exact images return HTTP 200 |
+| Historical `dfquny0nk` credential before/after provider rotation | HTTP 200 before; HTTP 401 with Cloudinary authentication error after |
+| Legacy Cloudinary public delivery after rotation | Both exact known legacy images return HTTP 200 |
+| Replacement-key console state | One active key created 2026-08-13; public identifier differs from historical key |
 
 The broad example-pattern scan still recognizes documentation placeholders such as `<user>:<password>` and dummy `re_...` examples in old documentation revisions. Exact-value scans and the repository scanner distinguish those inert examples from the exposed credentials.
 
-## Remaining action
+## Closure verification
 
 ### Legacy Cloudinary environment `dfquny0nk`
 
-The historical credential tested active. Owner access has now been recovered, but Cloudinary prevents disabling the sole Root key and the current account does not expose its Enterprise-only programmatic key-management route. Authenticated support ticket `#383469` requests a safe sole-key rotation while preserving the environment and its assets. After Cloudinary acts, verify:
+The historical credential tested active before Cloudinary acted. Ownership verification was supplied on ticket `#383488`, linked to duplicate ticket `#383469`, and Support rotated the key while preserving the environment and its assets. The requested closure checks now show:
 
-1. The historical credential receives an authentication failure.
-2. Current product image delivery remains unaffected.
-3. No authenticated application or deployment configuration uses `dfquny0nk`.
-4. Any legacy Media Library assets beyond the two already-migrated active product images are inventoried before any whole-environment shutdown.
+1. `VERIFIED`: the historical credential receives HTTP 401 from the Cloudinary Admin API.
+2. `VERIFIED`: current `fike` product image delivery and both exact known legacy public images remain HTTP 200.
+3. `VERIFIED`: the public product API and live feed contain zero `dfquny0nk` references; Render uses `fike`.
+4. `PRECAUTION`: inventory any additional legacy Media Library assets before any future whole-environment shutdown. No shutdown or asset deletion was part of this remediation.
 
 ## Superseded limitation
 

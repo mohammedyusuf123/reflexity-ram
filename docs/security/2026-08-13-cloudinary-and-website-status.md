@@ -6,16 +6,17 @@ Updated: 2026-08-13 (America/Toronto)
 
 The website is online and operating normally. The storefront, backend, product feed, sitemap, payments configuration, custom domain, and Merchant Center listings all passed the latest live checks.
 
-The unresolved Cloudinary problem is a security-cleanup issue involving an old image account, not a current website outage:
+The legacy Cloudinary security-cleanup issue is now contained and independently verified:
 
 - The current production backend uses the newer Cloudinary product environment `fike` for authenticated Cloudinary operations.
 - An older Cloudinary product environment, `dfquny0nk`, had its Root API credential committed to historical Git revisions.
 - The Git history was cleaned, but cleaning Git does not deactivate a credential that Cloudinary has already issued.
-- The old Root key remains active while Cloudinary Support handles ticket `#383469`.
+- Cloudinary Support rotated the exposed historical Root key after ownership verification on ticket `#383488`, linked to duplicate ticket `#383469`.
+- The historical credential returned HTTP 200 immediately before the rotation and HTTP 401 afterward. The console now shows one active replacement created on 2026-08-13 whose public identifier differs from the old key.
 - Render does not use the exposed old key. Commit `f0d31a3` also migrated the two current product records from legacy `dfquny0nk` image URLs to their verified `fike` copies.
 - The public product API, live Merchant feed, and both raw product-page social-image tags now contain only `fike` URLs. Both exact images return HTTP 200.
 
-There is no evidence in the available records that the website was compromised through this issue. The risk is that anyone who obtained the historical Root credential could have administrative API access to the legacy Cloudinary environment until the key is revoked.
+There is no evidence in the available records that the website was compromised through this issue. The earlier risk was that anyone who obtained the historical Root credential could have administrative API access to the legacy Cloudinary environment. That credential is now rejected.
 
 ## How the website fits together
 
@@ -27,11 +28,11 @@ There is no evidence in the available records that the website was compromised t
 | Payments | Stripe | `VERIFIED`: enabled in production; no Cloudinary dependency |
 | Transactional email | Resend | `VERIFIED`: historical exposed keys revoked; production key differs |
 | Current authenticated image operations | Cloudinary `fike` | `VERIFIED`: current key was not found in Git history and passed an upload/delete test |
-| Legacy image account | Cloudinary `dfquny0nk` | `OPEN`: exposed sole Root key still active pending Cloudinary Support |
+| Legacy image account | Cloudinary `dfquny0nk` | `VERIFIED`: Support rotated the exposed Root key; historical credential now returns HTTP 401 |
 | Product image delivery | Public Cloudinary URLs under `fike` | `VERIFIED`: API, feed, and product metadata use only `fike`; both exact images return HTTP 200 |
 | Shopping listings | Merchant Center `5832020811` | `VERIFIED`: 2 approved, 0 limited, 0 not approved, 0 under review |
 
-Cloudinary public image URLs do not contain the API secret. Rotating the Root API key should not by itself stop public images from loading. Disabling or deleting the entire legacy product environment would stop its asset delivery, which is why that destructive shortcut was not used.
+Cloudinary public image URLs do not contain the API secret. Rotating the Root API key did not stop public delivery: both known legacy image URLs and both current `fike` product images remained HTTP 200. The legacy product environment and its assets were not deleted.
 
 ## What originally happened
 
@@ -85,8 +86,12 @@ Cloudinary public image URLs do not contain the API secret. Rotating the Root AP
 - `VERIFIED`: the account exposes no Account Management Keys entry; Cloudinary documents programmatic access-key management as an Enterprise Provisioning API feature.
 - `VERIFIED`: the sole product environment's Active switch is disabled in the console.
 - `VERIFIED`: the legacy Media Library contains multiple assets, so deleting the account or whole environment without a complete migration would be unsafe.
-- `VERIFIED`: submitted authenticated Cloudinary Support ticket `#383469`; the ticket is `Open` and has a matching acknowledgement email.
-- `OPEN`: Cloudinary staff have not replied or changed the key yet.
+- `VERIFIED`: submitted authenticated Cloudinary Support ticket `#383469`, then supplied ownership verification on ticket `#383488` and linked the duplicate incident.
+- `VERIFIED`: Cloudinary Support confirmed at 08:46 America/Toronto that it rotated the exposed key.
+- `VERIFIED`: the historical Admin API credential changed from HTTP 200 before rotation to HTTP 401 afterward.
+- `VERIFIED`: the API Keys console shows one active replacement created on 2026-08-13 whose public identifier differs from the historical key; no extra failed replacement rows remain.
+- `VERIFIED`: the storefront, backend health, product API, live feed, both current `fike` images, and both exact known legacy public images remained HTTP 200 after rotation.
+- `VERIFIED`: a 09:10 reply supplied the successful verification results and asked Support to close or merge tickets `#383488` and `#383469`.
 
 ## Website, SEO, and Merchant Center work completed
 
@@ -137,8 +142,8 @@ These are retained so the next investigation does not repeat the same work.
 4. **The original Cloudflare rewrite did not proxy external XML.** Pages served static files. Resolution: implement bounded Pages Functions and verify the public bytes and headers.
 5. **CSP report-only testing found Cloudflare Web Analytics.** Enforcing the first draft would have blocked that script. Resolution: add only the observed Cloudflare analytics origin, lock the policy with tests, then enforce it.
 6. **Older GitHub Actions used a deprecated runtime.** Resolution: upgrade and pin current official action revisions, then verify a clean CI run.
-7. **Cloudinary would not disable the only Root key.** Resolution path: create a replacement first or have Cloudinary Support rotate it.
-8. **Cloudinary replacement creation required emailed verification.** No verification code is stored in project files or reports.
+7. **Cloudinary would not disable the only Root key.** Resolution: verify account ownership through Support and have Cloudinary rotate it while preserving the environment and assets.
+8. **Cloudinary replacement creation required emailed verification.** The first attempt accidentally used the earlier support-verification code and returned `Wrong code`. The correct 08:39 API-key code was retried only after Support had already rotated the key at 08:46, and a later stale-console request claimed to send another email without delivering one. Because the provider rotation had already occurred, the later behavior cannot distinguish code expiry from superseded key state. Support's completed rotation made further self-service creation unnecessary. No verification code is stored in project files or reports.
 9. **The non-code Provisioning API route was unavailable.** The account has no Account Management Keys entry, and Cloudinary limits programmatic access-key management to eligible Enterprise accounts.
 10. **The whole-environment Active switch was disabled.** At that point the Media Library contained additional assets and the current database still referenced legacy delivery URLs, so deletion would have been unsafe. The two active product records were subsequently migrated, but the additional legacy assets still require an inventory before any whole-environment deletion.
 11. **The first anonymous support-form attempt did not create a ticket.** Cloudinary marked it pending email-address verification. Resolution: sign the support portal into the already-authorized Cloudinary Google account and submit the request there; this produced ticket `#383469`.
@@ -148,18 +153,20 @@ These are retained so the next investigation does not repeat the same work.
 15. **The Stripe connector was not authenticated for an independent dashboard read-back.** The deployed migration calls the existing non-fatal Stripe Product detail synchronizer, but this audit did not independently confirm the resulting image field inside Stripe. Checkout remained enabled and the public storefront paths were unaffected.
 16. **A final Chrome support-ticket/tab pass could not connect.** Chrome was running and its native messaging manifest was valid, but the ChatGPT browser extension was not installed in the detected Chrome profiles. The supported browser runtime listed no available browser binding. No shell-level browser workaround was used and no unrelated user tabs were touched.
 17. **The connected Gmail integration was not the Cloudinary support mailbox.** A `Cloudinary` search returned only a GitHub deployment notification. Resolution: use the already-authorized Pixel 8a Gmail app for a narrowly scoped account check.
-18. **The authorized phone check found no human Cloudinary response.** The known Cloudinary support account contained the automated receipt for ticket `#383469` and no staff reply. The prior Gmail account and foregrounded app were restored afterward. Four exact temporary UI-dump XML files were deleted and verified absent; no verification code or reusable credential was retained.
+18. **The first authorized phone check found no human Cloudinary response.** A later refresh found ownership-verification instructions and then Zachary Gould's rotation confirmation. This supersedes the earlier no-reply snapshot.
 19. **Local evidence cannot inventory every legacy Media Library asset.** The repository, reachable history, and broader workspace recover only the two exact public URLs already migrated. Earlier console evidence showed additional assets whose identifiers were not retained locally, so a complete inventory still requires supported console/admin access or Cloudinary Support.
+20. **The legacy credential could not be assumed inactive from a support email alone.** Resolution: issue the same bounded Admin API request before and after rotation without printing the credential. It returned HTTP 200 before and HTTP 401 after.
+21. **The console-generated replacement name was not retained by Cloudinary's completed support rotation.** The final replacement appears as `Untitled`, active, created 2026-08-13. Its public identifier differs from the historical key, and the failed self-service attempts left no additional key rows.
 
 ## What remains
 
-### Required to close the security incident
+### Security incident closure
 
-1. Wait for Cloudinary Support to respond to ticket `#383469`.
-2. Have Cloudinary create/rotate the replacement credential or provide its supported secure verification route.
-3. Disable or revoke the exposed legacy Root key.
-4. Prove the historical credential now receives an authentication failure without printing it.
-5. Confirm all intended public assets still load.
+1. `VERIFIED`: Cloudinary Support rotated the exposed legacy Root key.
+2. `VERIFIED`: the historical credential now returns HTTP 401 without being printed or persisted in this report.
+3. `VERIFIED`: the replacement public key identifier differs from the historical key.
+4. `VERIFIED`: the storefront, backend, API, feed, current product images, and both known legacy public images remained HTTP 200.
+5. `VERIFIED`: the closure result was sent back to Support with a request to close or merge both tickets.
 
 ### Data cleanup completed and residual precaution
 
@@ -175,13 +182,13 @@ The stock rollback helper passed a real Atlas transaction test. The authenticate
 
 An authenticated Stripe Dashboard or connector read-back could additionally confirm that both Stripe Product image fields received the new `fike` URLs. The migration invokes that sync path, but public API/feed/page verification does not prove Stripe's independently stored display field.
 
-The remaining access-dependent checks are now explicit: Stripe connector authorization is needed for its dashboard read-back; the ChatGPT browser extension must be installed/enabled for supported Chrome tab and portal control; and Cloudinary must either answer ticket `#383469` or expose a supported replacement-key path. None of these access gaps blocks the live storefront.
+The remaining access-dependent checks are lower priority: Stripe connector authorization is needed for its dashboard read-back, and the ChatGPT browser extension must be installed/enabled for supported desktop Chrome control. Neither gap blocks the live storefront or the verified Cloudinary incident closure.
 
 ## Current conclusion
 
-`VERIFIED`: Reflexity RAM is live, Merchant Center is clear, production credentials other than the legacy Cloudinary key are contained, and the repository/deployment security work is active.
+`VERIFIED`: Reflexity RAM is live, Merchant Center is clear, the exposed credentials identified in this incident are contained, and the repository/deployment security work is active.
 
-`OPEN`: Cloudinary Support must rotate or revoke the sole exposed Root key for `dfquny0nk`.
+`VERIFIED`: Cloudinary Support rotated the exposed Root key for `dfquny0nk`; the historical credential now returns HTTP 401.
 
 `VERIFIED`: The active storefront catalog no longer depends on legacy `dfquny0nk` delivery URLs; the API, feed, metadata, and image checks all use `fike`.
 

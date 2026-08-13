@@ -2,9 +2,11 @@
 
 ## Status
 
-**Contained with one legacy-provider action remaining.** The live Reflexity RAM deployment is healthy and uses rotated or otherwise confirmed-safe production credentials. The only unresolved credential belongs to the historical, non-production Cloudinary environment `dfquny0nk`, which is not available in the currently accessible Cloudinary account and is not used by Render.
+**Contained with one legacy-provider action remaining.** The live Reflexity RAM deployment is healthy and uses rotated or otherwise confirmed-safe production credentials. Access to the historical Cloudinary environment `dfquny0nk` was later recovered, but its sole exposed Root key remains active pending Cloudinary Support ticket `#383469`. Render does not use that key.
 
 This report deliberately contains no credentials, tokens, passwords, or reusable secret fragments.
+
+Current human-readable follow-up: [`2026-08-13-cloudinary-and-website-status.md`](2026-08-13-cloudinary-and-website-status.md)
 
 ## Executive summary
 
@@ -18,7 +20,7 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 |---|---|---|---|
 | MongoDB Atlas database-user credential | Present in historical Git commits and valid when tested | Database-user password regenerated; historical URI now fails authentication | Replacement URI validated and saved in Render |
 | Resend API keys | Two historical keys present in Git history | Both historical keys revoked; current key differs from them | Current production key retained |
-| Cloudinary historical environment `dfquny0nk` | Historical credential present in Git and active when tested | Owning account not accessible during remediation | Not used by current Render deployment |
+| Cloudinary historical environment `dfquny0nk` | Historical credential present in Git and active when tested | Owner access recovered; authenticated support ticket `#383469` is open for sole-key rotation | Not used by current Render deployment; two product records still use its public delivery URLs |
 | Cloudinary current environment `fike` | Current Aug 4 root key was not found in Git history | Controlled upload/delete validation passed; three unused remediation keys disabled | Current Render configuration retained |
 | JWT, session, admin, and seed values | Historical assignments were present | Historical authentication values tested invalid or were replaced | Current runtime values retained |
 
@@ -33,6 +35,8 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 - **2026-08-10 23:30 UTC:** Render deployment `dep-d9t5ttqfngtc73cqepk0` connected to MongoDB, started the application, and became live.
 - **2026-08-10:** Closure evidence was recorded in commit `56e8eda`.
 - **2026-08-11 00:09 UTC:** The active Atlas URI was displayed during interactive transaction-test setup and was treated as exposed. The password was rotated again, Render was updated, and deployment `dep-d9t6g5egekts73cbjhqg` connected successfully and became live.
+- **2026-08-12:** Located the authorized owner account for legacy Cloudinary environment `dfquny0nk`; confirmed it has one active Root key, no Account Management Keys entry, and no enabled whole-environment switch.
+- **2026-08-13:** Submitted authenticated Cloudinary Support ticket `#383469` requesting rotation or revocation of the sole exposed Root key while preserving all assets and public delivery. The ticket remains open.
 
 ## Remediation completed
 
@@ -83,15 +87,16 @@ The broad example-pattern scan still recognizes documentation placeholders such 
 
 ### Legacy Cloudinary environment `dfquny0nk`
 
-The historical credential tested active, but its product environment is absent from the currently accessible Cloudinary account and it is not referenced by Render's active configuration. The owner of that legacy Cloudinary account must disable or delete the exposed key. After access is available, verify:
+The historical credential tested active. Owner access has now been recovered, but Cloudinary prevents disabling the sole Root key and the current account does not expose its Enterprise-only programmatic key-management route. Authenticated support ticket `#383469` requests a safe sole-key rotation while preserving the environment and its assets. After Cloudinary acts, verify:
 
 1. The historical credential receives an authentication failure.
 2. Current product image delivery remains unaffected.
-3. No application or deployment configuration still references `dfquny0nk` except migration history or intentionally retained old image URLs.
+3. No authenticated application or deployment configuration uses `dfquny0nk`.
+4. The two public product image records are migrated to their verified `fike` copies before any whole-environment shutdown.
 
-## Non-blocking limitation
+## Superseded limitation
 
-The connected GitHub OAuth token lacks `workflow` scope, so GitHub rejected creation of an Actions secret-scan workflow. GitHub's native secret scanning and push protection are enabled and provide server-side enforcement; the local scanner remains available through `npm run scan:secrets`.
+At the time of the original remediation, the connected GitHub OAuth token lacked `workflow` scope, so GitHub rejected creation of an Actions secret-scan workflow. A CI workflow was later added through the normal repository path and verified clean. GitHub native secret scanning and push protection remain enabled, and the local scanner remains available through `npm run scan:secrets`.
 
 ## Preservation notes
 

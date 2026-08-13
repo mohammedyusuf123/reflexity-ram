@@ -20,7 +20,7 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 |---|---|---|---|
 | MongoDB Atlas database-user credential | Present in historical Git commits and valid when tested | Database-user password regenerated; historical URI now fails authentication | Replacement URI validated and saved in Render |
 | Resend API keys | Two historical keys present in Git history | Both historical keys revoked; current key differs from them | Current production key retained |
-| Cloudinary historical environment `dfquny0nk` | Historical credential present in Git and active when tested | Owner access recovered; authenticated support ticket `#383469` is open for sole-key rotation | Not used by current Render deployment; two product records still use its public delivery URLs |
+| Cloudinary historical environment `dfquny0nk` | Historical credential present in Git and active when tested | Owner access recovered; authenticated support ticket `#383469` is open for sole-key rotation | Not used by current Render deployment; active product records were migrated to `fike` in commit `f0d31a3` |
 | Cloudinary current environment `fike` | Current Aug 4 root key was not found in Git history | Controlled upload/delete validation passed; three unused remediation keys disabled | Current Render configuration retained |
 | JWT, session, admin, and seed values | Historical assignments were present | Historical authentication values tested invalid or were replaced | Current runtime values retained |
 
@@ -37,6 +37,7 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 - **2026-08-11 00:09 UTC:** The active Atlas URI was displayed during interactive transaction-test setup and was treated as exposed. The password was rotated again, Render was updated, and deployment `dep-d9t6g5egekts73cbjhqg` connected successfully and became live.
 - **2026-08-12:** Located the authorized owner account for legacy Cloudinary environment `dfquny0nk`; confirmed it has one active Root key, no Account Management Keys entry, and no enabled whole-environment switch.
 - **2026-08-13:** Submitted authenticated Cloudinary Support ticket `#383469` requesting rotation or revocation of the sole exposed Root key while preserving all assets and public delivery. The ticket remains open.
+- **2026-08-13:** Deployed commit `f0d31a3`; Render's idempotent startup migration replaced the two exact legacy product-image URLs with `fike` copies. The public API, live feed, and product metadata now contain zero `dfquny0nk` references.
 
 ## Remediation completed
 
@@ -60,6 +61,7 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 - Confirmed the current Cloudinary environment is `fike`, renamed from `akbuojoj`.
 - Validated the current Cloudinary credential with a controlled upload and cleanup.
 - Disabled three unused non-root Cloudinary keys created during remediation.
+- Migrated both active product image records to verified `fike` copies and removed the frontend legacy-host compatibility rewrite.
 - Confirmed Render checked out cleaned commit `a88d3b6`, connected to MongoDB, started on port 3001, and reported the service live.
 - Re-rotated the Atlas database-user password after the interactive display, verified the replacement directly, removed the disposable transaction-test database and temporary user, and confirmed the replacement Render deployment became live.
 
@@ -80,6 +82,7 @@ The evidence supports a public Git-history exposure. It does not indicate that t
 | `GET /api/products?page=1&limit=1` | Valid paginated response containing one product |
 | Atlas rollback integration | Pass against isolated Atlas database; exact-marker cleanup left zero fixtures |
 | Render deployment after follow-up rotation | `dep-d9t6g5egekts73cbjhqg` live with MongoDB connected |
+| Active product image URLs after `f0d31a3` | Public API, live feed, and raw product metadata use only `fike`; both exact images return HTTP 200 |
 
 The broad example-pattern scan still recognizes documentation placeholders such as `<user>:<password>` and dummy `re_...` examples in old documentation revisions. Exact-value scans and the repository scanner distinguish those inert examples from the exposed credentials.
 
@@ -92,7 +95,7 @@ The historical credential tested active. Owner access has now been recovered, bu
 1. The historical credential receives an authentication failure.
 2. Current product image delivery remains unaffected.
 3. No authenticated application or deployment configuration uses `dfquny0nk`.
-4. The two public product image records are migrated to their verified `fike` copies before any whole-environment shutdown.
+4. Any legacy Media Library assets beyond the two already-migrated active product images are inventoried before any whole-environment shutdown.
 
 ## Superseded limitation
 

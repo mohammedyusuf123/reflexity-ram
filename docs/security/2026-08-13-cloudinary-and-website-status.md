@@ -12,8 +12,8 @@ The unresolved Cloudinary problem is a security-cleanup issue involving an old i
 - An older Cloudinary product environment, `dfquny0nk`, had its Root API credential committed to historical Git revisions.
 - The Git history was cleaned, but cleaning Git does not deactivate a credential that Cloudinary has already issued.
 - The old Root key remains active while Cloudinary Support handles ticket `#383469`.
-- Render does not use the exposed old key. However, the two current product records still contain public image-delivery URLs under `dfquny0nk`.
-- Matching copies of both storefront images under `fike` return HTTP 200, so the site can be migrated away from the legacy image URLs.
+- Render does not use the exposed old key. Commit `f0d31a3` also migrated the two current product records from legacy `dfquny0nk` image URLs to their verified `fike` copies.
+- The public product API, live Merchant feed, and both raw product-page social-image tags now contain only `fike` URLs. Both exact images return HTTP 200.
 
 There is no evidence in the available records that the website was compromised through this issue. The risk is that anyone who obtained the historical Root credential could have administrative API access to the legacy Cloudinary environment until the key is revoked.
 
@@ -28,7 +28,7 @@ There is no evidence in the available records that the website was compromised t
 | Transactional email | Resend | `VERIFIED`: historical exposed keys revoked; production key differs |
 | Current authenticated image operations | Cloudinary `fike` | `VERIFIED`: current key was not found in Git history and passed an upload/delete test |
 | Legacy image account | Cloudinary `dfquny0nk` | `OPEN`: exposed sole Root key still active pending Cloudinary Support |
-| Product image delivery | Public Cloudinary URLs | `VERIFIED`: legacy and corresponding `fike` copies both return HTTP 200 |
+| Product image delivery | Public Cloudinary URLs under `fike` | `VERIFIED`: API, feed, and product metadata use only `fike`; both exact images return HTTP 200 |
 | Shopping listings | Merchant Center `5832020811` | `VERIFIED`: 2 approved, 0 limited, 0 not approved, 0 under review |
 
 Cloudinary public image URLs do not contain the API secret. Rotating the Root API key should not by itself stop public images from loading. Disabling or deleting the entire legacy product environment would stop its asset delivery, which is why that destructive shortcut was not used.
@@ -73,6 +73,8 @@ Cloudinary public image URLs do not contain the API secret. Rotating the Root AP
 - `VERIFIED`: confirmed its current Root key was not present in the exposed Git history.
 - `VERIFIED`: completed a controlled upload/delete test with the current credential.
 - `VERIFIED`: disabled three unused non-root keys created during remediation.
+- `VERIFIED`: deployed an idempotent database migration for the two exact legacy product-image URLs and removed the frontend legacy-host compatibility rewrite.
+- `VERIFIED`: confirmed the public product API, Merchant feed, and both product-page social-image tags contain zero `dfquny0nk` references after deployment.
 
 ### Legacy Cloudinary environment
 
@@ -122,7 +124,8 @@ Cloudinary public image URLs do not contain the API secret. Rotating the Root AP
 - `VERIFIED`: admin product deletion is a reversible deactivation that preserves order, cart, and review references.
 - `VERIFIED`: storefront product reviews now appear as a fifth details tab and remain separate from Google Customer Reviews.
 - `VERIFIED`: the production storefront, shop, product pages, cart, checkout, and authentication modal rendered without CSP errors, JavaScript errors, broken images, or unhandled rejections.
-- `VERIFIED`: the latest comprehensive local verification passed 15 frontend tests, 11 runnable backend tests, production build, secret scan, and dependency audits with zero reported vulnerabilities.
+- `VERIFIED`: the latest comprehensive local verification passed 17 frontend tests, 13 backend tests with the opt-in Atlas integration intentionally skipped, the production build, secret scan, and dependency audits with zero reported vulnerabilities.
+- `VERIFIED`: pull request `#1`, main CI run `31670637356`, and the Cloudflare Pages deployment for commit `f0d31a3` completed successfully.
 
 ## Problems and dead ends encountered
 
@@ -137,7 +140,7 @@ These are retained so the next investigation does not repeat the same work.
 7. **Cloudinary would not disable the only Root key.** Resolution path: create a replacement first or have Cloudinary Support rotate it.
 8. **Cloudinary replacement creation required emailed verification.** No verification code is stored in project files or reports.
 9. **The non-code Provisioning API route was unavailable.** The account has no Account Management Keys entry, and Cloudinary limits programmatic access-key management to eligible Enterprise accounts.
-10. **The whole-environment Active switch was disabled.** Even if account deletion were available, the Media Library contains additional assets and the current database still references legacy delivery URLs, so deletion would be unsafe.
+10. **The whole-environment Active switch was disabled.** At that point the Media Library contained additional assets and the current database still referenced legacy delivery URLs, so deletion would have been unsafe. The two active product records were subsequently migrated, but the additional legacy assets still require an inventory before any whole-environment deletion.
 11. **The first anonymous support-form attempt did not create a ticket.** Cloudinary marked it pending email-address verification. Resolution: sign the support portal into the already-authorized Cloudinary Google account and submit the request there; this produced ticket `#383469`.
 12. **Some BrowserOS accessibility clicks reported success without changing the page.** Resolution: inspect the actual target, use the page's supported navigation URL or focused browser input, and always verify the resulting URL and visible state.
 13. **One Render product request timed out during a cold response.** A bounded retry returned the expected live catalog. This was not a persistent outage.
@@ -153,12 +156,13 @@ These are retained so the next investigation does not repeat the same work.
 4. Prove the historical credential now receives an authentication failure without printing it.
 5. Confirm all intended public assets still load.
 
-### Recommended data cleanup
+### Data cleanup completed and residual precaution
 
-1. Change the two live product image records from the legacy `dfquny0nk` URLs to their verified `fike` copies.
-2. Update the frontend compatibility mapping so it no longer falls back to legacy delivery.
-3. Verify product pages, social metadata, feed, sitemap, Merchant Center image fetching, and both images after deployment.
-4. Inventory and migrate any other legacy assets before considering whole-environment deactivation or account deletion.
+1. `VERIFIED`: the two live product image records now use their exact `fike` copies.
+2. `VERIFIED`: the frontend no longer rewrites image URLs through a legacy-host fallback.
+3. `VERIFIED`: product API data, product-page social metadata, the live Merchant feed, and both image responses passed post-deployment checks.
+4. `OPEN`: Google Merchant Center's next image recrawl is asynchronous and was not forced; the account was already at two approved products with no policy or item issues before the migration.
+5. `OPEN`: inventory and migrate any other legacy Media Library assets before considering whole-environment deactivation or account deletion.
 
 ### Lower-priority verification gap
 
@@ -170,7 +174,7 @@ The stock rollback helper passed a real Atlas transaction test. The authenticate
 
 `OPEN`: Cloudinary Support must rotate or revoke the sole exposed Root key for `dfquny0nk`.
 
-`OPEN`: Product image records should be migrated to `fike` so the storefront no longer depends on the legacy delivery environment.
+`VERIFIED`: The active storefront catalog no longer depends on legacy `dfquny0nk` delivery URLs; the API, feed, metadata, and image checks all use `fike`.
 
 `UNKNOWN`: There is no direct evidence that the exposed Cloudinary credential was abused. Absence of evidence is not proof that it was never accessed.
 

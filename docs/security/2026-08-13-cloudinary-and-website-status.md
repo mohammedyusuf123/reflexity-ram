@@ -146,7 +146,10 @@ These are retained so the next investigation does not repeat the same work.
 13. **One Render product request timed out during a cold response.** A bounded retry returned the expected live catalog. This was not a persistent outage.
 14. **Older project notes still showed resolved items as open.** The `www` DNS and rendered-QA entries were marked `STALE` after current runtime evidence superseded them.
 15. **The Stripe connector was not authenticated for an independent dashboard read-back.** The deployed migration calls the existing non-fatal Stripe Product detail synchronizer, but this audit did not independently confirm the resulting image field inside Stripe. Checkout remained enabled and the public storefront paths were unaffected.
-16. **A final Chrome support-ticket/tab pass could not connect.** Chrome was running and its native messaging manifest was valid, but the ChatGPT browser extension was not installed in the detected Chrome profiles. No shell-level browser workaround was used, no unrelated user tabs were touched, and the ticket status in this report remains the most recent successful authenticated observation from the same investigation.
+16. **A final Chrome support-ticket/tab pass could not connect.** Chrome was running and its native messaging manifest was valid, but the ChatGPT browser extension was not installed in the detected Chrome profiles. The supported browser runtime listed no available browser binding. No shell-level browser workaround was used and no unrelated user tabs were touched.
+17. **The connected Gmail integration was not the Cloudinary support mailbox.** A `Cloudinary` search returned only a GitHub deployment notification. Resolution: use the already-authorized Pixel 8a Gmail app for a narrowly scoped account check.
+18. **The authorized phone check found no human Cloudinary response.** The known Cloudinary support account contained the automated receipt for ticket `#383469` and no staff reply. The prior Gmail account and foregrounded app were restored afterward. Four exact temporary UI-dump XML files were deleted and verified absent; no verification code or reusable credential was retained.
+19. **Local evidence cannot inventory every legacy Media Library asset.** The repository, reachable history, and broader workspace recover only the two exact public URLs already migrated. Earlier console evidence showed additional assets whose identifiers were not retained locally, so a complete inventory still requires supported console/admin access or Cloudinary Support.
 
 ## What remains
 
@@ -171,6 +174,8 @@ These are retained so the next investigation does not repeat the same work.
 The stock rollback helper passed a real Atlas transaction test. The authenticated admin cancellation HTTP route and a truly concurrent cancellation-versus-Stripe recovery race have not been exercised end-to-end. This does not block the current storefront but remains useful regression coverage.
 
 An authenticated Stripe Dashboard or connector read-back could additionally confirm that both Stripe Product image fields received the new `fike` URLs. The migration invokes that sync path, but public API/feed/page verification does not prove Stripe's independently stored display field.
+
+The remaining access-dependent checks are now explicit: Stripe connector authorization is needed for its dashboard read-back; the ChatGPT browser extension must be installed/enabled for supported Chrome tab and portal control; and Cloudinary must either answer ticket `#383469` or expose a supported replacement-key path. None of these access gaps blocks the live storefront.
 
 ## Current conclusion
 

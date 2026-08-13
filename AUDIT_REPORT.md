@@ -1,5 +1,9 @@
 # Reflexity RAM — Pre-Production Backend Audit Report
 
+> **HISTORICAL SNAPSHOT (May 2026).** Retained for incident history only. Do not
+> use this file for current credentials, setup, deployment, or production
+> status. Use `README.md`, `DEPLOY.md`, and `PROJECT_STATE.md` instead.
+
 **Date:** May 19, 2026  
 **Auditor:** Manus AI  
 **Scope:** Backend API, Database Models, Auth, Stripe Integration, Admin System, Security  
@@ -67,11 +71,11 @@ The following critical issues were discovered during the audit. **All have been 
 ### A. Exposed Credentials (Fixed)
 * **The Issue:** The `.env.example` file committed to the repository contained real, live API keys for Resend and Cloudinary, as well as the default admin password.
 * **The Fix:** The `.env.example` file was scrubbed and replaced with safe placeholders. The git history was rewritten via a force-push to remove the credentials from previous commits.
-* **ACTION REQUIRED:** You must rotate the Resend API key (`re_V7Uk...`) and Cloudinary API Secret (`TM3PN...`) immediately, as they were temporarily exposed in the git history.
+* **Historical follow-up:** The exposed provider credentials required rotation. Current remediation status is recorded without credential fragments in `PROJECT_STATE.md` and `docs/security/2026-08-10-credential-exposure-incident.md`.
 
 ### B. Seed Data Safety (Verified)
-* **The Issue:** The `seed.js` script creates an admin user with default credentials (`admin@reflexityram.com` / `Admin@123456`).
-* **The Fix:** The script is isolated and must be run manually (`npm run seed`). It is not executed automatically on server start. The `.env.example` file now explicitly warns to change these credentials before running the seed in production.
+* **Historical issue:** An older seed script created an admin with source-controlled default credentials.
+* **Current behavior:** There is no default admin password. The seed path must be invoked deliberately and refuses to create or reset an admin unless `ADMIN_PASSWORD` is explicitly supplied and at least 12 characters.
 
 ### C. Rate Limiting & CORS (Verified)
 * **Status:** Rate limiting is correctly configured in `server.js` (200 requests/15min globally, 20 requests/15min for auth routes). CORS is correctly restricted to `ALLOWED_ORIGINS`.

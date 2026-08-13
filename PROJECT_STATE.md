@@ -1,11 +1,20 @@
 # Project State
 
+## 2026-08-12 — Merchant clearance and live XML delivery correction
+
+- VERIFIED (USER-PROVIDED GOOGLE EMAIL): Google Merchant Center emailed at 3:37 PM that the requested Misrepresentation review for Reflexity RAM account `5832020811` was complete and the issue no longer appeared in the account. This supersedes the August 10 blocked-status snapshot; current product serving still requires normal Merchant diagnostics/visibility checks.
+- CONTRADICTED (RUNTIME/STATIC): The apex `/feed.xml` and `/sitemap.xml` responses were byte-for-byte copies of `frontend/public/feed.xml` and `frontend/public/sitemap.xml`, not the backend's live XML. Cloudflare Pages does not proxy external domains through a `200` `_redirects` rule. The earlier description of the apex sitemap as dynamic was incorrect.
+- VERIFIED (STATIC/TEST/LOCAL RUNTIME): Static product XML and the invalid external rewrite rules were removed. File-routed Pages Functions now proxy only `/feed.xml` and `/sitemap.xml` to the live Render catalog, cache successful XML for five minutes, reject non-read methods, fail closed on upstream errors, and mark responses with `X-Reflexity-Source: live-catalog-api`. Wrangler compiled the Functions and served both routes locally.
+- VERIFIED (STATIC/TEST): The backend sitemap source now includes `/liquidators`, `/international`, and `/business-info`; a regression test locks the complete indexable static-route set. Cloudflare's native SPA fallback replaces the redundant catch-all rewrite.
+- VERIFIED (STATIC/BUILD): Static frontend responses now set one-year HSTS and a staged CSP report-only policy. Deployment/environment examples were repaired after the credential-history scrub, obsolete default-admin instructions were removed, and current Render/Pages/Stripe configuration is documented without secrets.
+- PENDING (DEPLOY): Push the verified changes, wait for both Render and Cloudflare Pages, then confirm the apex XML responses carry the live-source header and include all 21 expected URLs (19 static routes plus two current products).
+
 ## 2026-08-10 — Render 8 PM failure investigation
 
 - VERIFIED (GMAIL/RENDER): Render sent a deploy-failed notification at 8:06 PM and instance-failure notifications at 8:07–8:09 PM for commit `4116811`.
 - VERIFIED (RUNTIME LOG): The failed instances exited because MongoDB rejected authentication. This was an environment credential problem, not a build/compiler failure in commit `4116811`.
 - VERIFIED (RUNTIME): A manual deploy of the same commit connected to MongoDB and became live at 8:09 PM after the credential was corrected. Commit `14ed06b` then deployed successfully and became live at 8:14 PM.
-- VERIFIED (RUNTIME): Production returned HTTP 200 for backend health, normalized product pagination, product feed, dynamic sitemap, storefront home, Server shop, wholesale, support, terms, and privacy. The Server shop rendered both active products. Health reported `env=production` and Stripe enabled.
+- VERIFIED (RUNTIME): Production returned HTTP 200 for backend health, normalized product pagination, product feed, sitemap, storefront home, Server shop, wholesale, support, terms, and privacy. The Server shop rendered both active products. Health reported `env=production` and Stripe enabled. The August 12 audit later proved the apex XML was a static deployment snapshot at this time.
 - VERIFIED (TEST/BUILD): Secret scanning passed; all five frontend tests and ten runnable backend tests passed; the Atlas transaction test remained intentionally skipped without a disposable test database; the Vite production build succeeded.
 - VERIFIED (STATIC/TEST/RUNTIME): Backend cleanup in commit `6571815` replaces Mongoose 9's deprecated `new: true` update option with `returnDocument: 'after'` and removes duplicate Order/Cart schema-index declarations. Model loading produced no duplicate-index or deprecation warnings locally, and the 9:31 PM Render startup connected to MongoDB and reached live status without those warnings.
 - VERIFIED (RUNTIME): Both active product images still use the legacy `dfquny0nk` delivery hostname, but the exact legacy and current `fike` URLs return HTTP 200. This is data-hygiene debt, not the cause of the Render outage.

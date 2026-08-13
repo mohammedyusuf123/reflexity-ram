@@ -1,28 +1,8 @@
 const express = require('express');
 const Product = require('../models/Product');
+const { BASE_URL, STATIC_PAGES } = require('../config/sitemap');
 
 const router = express.Router();
-
-const BASE_URL = 'https://reflexityram.com';
-
-const staticPages = [
-  { path: '/', changefreq: 'daily', priority: '1.0' },
-  { path: '/shop', changefreq: 'daily', priority: '0.9' },
-  { path: '/categories', changefreq: 'weekly', priority: '0.8' },
-  { path: '/guides', changefreq: 'weekly', priority: '0.8' },
-  { path: '/guides/ddr4-vs-ddr5', changefreq: 'monthly', priority: '0.7' },
-  { path: '/guides/ecc-rdimm-udimm-explained', changefreq: 'monthly', priority: '0.7' },
-  { path: '/guides/how-to-identify-ram', changefreq: 'monthly', priority: '0.7' },
-  { path: '/guides/how-much-ram-do-i-need', changefreq: 'monthly', priority: '0.7' },
-  { path: '/wholesale', changefreq: 'monthly', priority: '0.6' },
-  { path: '/support', changefreq: 'monthly', priority: '0.5' },
-  { path: '/shipping', changefreq: 'monthly', priority: '0.5' },
-  { path: '/returns', changefreq: 'monthly', priority: '0.5' },
-  { path: '/warranty', changefreq: 'monthly', priority: '0.5' },
-  { path: '/faq', changefreq: 'monthly', priority: '0.5' },
-  { path: '/privacy', changefreq: 'yearly', priority: '0.3' },
-  { path: '/terms', changefreq: 'yearly', priority: '0.3' },
-];
 
 router.get('/sitemap.xml', async (req, res) => {
   try {
@@ -35,7 +15,7 @@ router.get('/sitemap.xml', async (req, res) => {
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
-    for (const page of staticPages) {
+    for (const page of STATIC_PAGES) {
       xml += `  <url>\n`;
       xml += `    <loc>${BASE_URL}${page.path}</loc>\n`;
       xml += `    <lastmod>${today}</lastmod>\n`;

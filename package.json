@@ -9,8 +9,9 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "test": "npm --prefix frontend test && npm --prefix backend test",
     "build:frontend": "cd frontend && npm run build",
+    "verify": "npm test && npm run build:frontend && npm run scan:secrets",
     "seed": "cd backend && node src/scripts/seed.js",
-    "install:all": "cd backend && npm install && cd ../frontend && npm install --legacy-peer-deps",
+    "install:all": "npm ci && npm --prefix backend ci && npm --prefix frontend ci",
     "scan:secrets": "node scripts/scan-secrets.mjs"
   },
   "devDependencies": {

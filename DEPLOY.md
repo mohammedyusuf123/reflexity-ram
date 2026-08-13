@@ -1,292 +1,193 @@
-# Reflexity RAM — Deployment Guide
+# Reflexity RAM deployment guide
 
-## Architecture Overview
+This guide describes the current production architecture. Never paste live
+credentials into this repository, commit them, or include them in screenshots.
 
+## Production topology
+
+```text
+reflexityram.com
+  Cloudflare Pages project: reflexity-ram2
+  Root directory: frontend
+  Build command: npm ci && npm run build
+  Output directory: dist
+  Pages Functions: /feed.xml and /sitemap.xml
+
+https://reflexity-ram.onrender.com
+  Render service root: backend
+  Build command: npm ci
+  Start command: node src/server.js
+  Health check: /api/health
+
+MongoDB Atlas + Stripe + Resend + Cloudinary
+  Credentials exist only in provider/deployment environment settings
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Production Stack                          │
-├──────────────────────┬──────────────────────┬───────────────────┤
-│  Frontend            │  Backend             │  Services         │
-│  Cloudflare Pages    │  Railway/Render/Fly  │  MongoDB Atlas    │
-│  React + Vite        │  Node.js + Express   │  Cloudinary       │
-│  TailwindCSS         │  JWT Auth            │  Resend Email     │
-│                      │  Mongoose            │  Stripe Payments  │
-└──────────────────────┴──────────────────────┴───────────────────┘
-```
 
----
+Both deployments track the repository's `main` branch.
 
-## 1. Prerequisites
+## 1. Pre-deploy verification
 
-- [MongoDB Atlas](https://cloud.mongodb.com) account (free tier works)
-- [Cloudinary](https://cloudinary.com) account (credentials already in `.env`)
-- [Resend](https://resend.com) account (API key already in `.env`)
-- [Stripe](https://stripe.com) account (for payments)
-- [Cloudflare Pages](https://pages.cloudflare.com) account (free)
-- [Railway](https://railway.app) **or** [Render](https://render.com) account (free tier)
-- GitHub account
-
----
-
-## 2. MongoDB Atlas Setup
-
-1. Create a free cluster at [cloud.mongodb.com](https://cloud.mongodb.com)
-2. Create a database user (username + password)
-3. Whitelist IP: `0.0.0.0/0` (allow all — Railway/Render have dynamic IPs)
-4. Get your connection string:
-   ```
-   mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/reflexity-ram?retryWrites=true&w=majority
-   ```
-
----
-
-## 3. Backend Deployment
-
-### Option A: Railway (Recommended)
-
-1. Push this repo to GitHub (see step 5 below)
-2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
-3. Select the `backend` directory as the root
-> **⚠️ SECURITY — ROTATE THESE CREDENTIALS.** Earlier versions of this file
-> (and of `backend/.env`) contained a **live Resend API key** and **live
-> Cloudinary API key + secret**, committed to git. Treat them as burned:
-> revoke the Resend key and regenerate the Cloudinary secret in their
-> dashboards, then set the new values ONLY in your hosting dashboard
-> (Render/Railway env vars) — never in this repo. Rotation matters more than
-> scrubbing git history: once committed, a key is compromised.
-
-4. Add environment variables from `backend/.env.example`:
-   ```
-   NODE_ENV=production
-   PORT=5000
-   MONGODB_URI=mongodb+srv://...
-\1<removed-from-history>nerate a 64-char random string>
-   ALLOWED_ORIGINS=https://your-site.pages.dev,https://reflexityram.com
-   FRONTEND_URL=https://your-site.pages.dev
-\1<removed-from-history>r Resend API key>
-   FROM_EMAIL=Reflexity RAM <noreply@reflexityram.com>
-   CLOUDINARY_CLOUD_NAME=<your Cloudinary cloud name>
-\1<removed-from-history>r Cloudinary API key>
-\1<removed-from-history>r Cloudinary API secret>
-   STRIPE_SECRET_KEY=sk_live_...
-   STRIPE_WEBHOOK_SECRET=whsec_...
-   ```
-5. Railway will auto-detect Node.js and deploy
-6. Note your Railway URL: `https://reflexity-ram-api.railway.app`
-
-### Option B: Render
-
-1. Go to [render.com](https://render.com) → New → Web Service
-2. Connect your GitHub repo
-3. Set **Root Directory** to `backend`
-4. Build command: `npm install`
-5. Start command: `node src/server.js`
-6. Add the same environment variables as above
-7. Note your Render URL: `https://reflexity-ram-api.onrender.com`
-
-### Option C: Fly.io
+From the repository root:
 
 ```bash
-cd backend
-fly launch --name reflexity-ram-api
-fly secrets set NODE_ENV=production MONGODB_URI=... JWT_SECRET=...
-fly deploy
+npm ci
+npm --prefix backend ci
+npm --prefix frontend ci
+npm test
+npm run build:frontend
+npm run scan:secrets
+npm audit --prefix frontend
+npm audit --prefix backend
+git diff --check
 ```
 
-### Option D: VPS (Ubuntu)
+An ordinary run intentionally skips the real Atlas transaction test unless its
+dedicated safety variables and disposable database are supplied.
+
+## 2. Render backend
+
+Create or update a Web Service with:
+
+- Root directory: `backend`
+- Runtime: Node
+- Build command: `npm ci`
+- Start command: `node src/server.js`
+- Health check path: `/api/health`
+
+Set these environment variables in Render, never in Git:
+
+| Variable | Required | Purpose |
+|---|---:|---|
+| `NODE_ENV=production` | yes | Production error handling |
+| `MONGODB_URI` | yes | MongoDB Atlas connection |
+| `JWT_SECRET` | yes | JWT signing secret |
+| `JWT_EXPIRES_IN=7d` | yes | Session lifetime |
+| `ALLOWED_ORIGINS` | yes | Comma-separated Cloudflare origins |
+| `FRONTEND_URL=https://reflexityram.com` | yes | Email and checkout return links |
+| `RESEND_API_KEY` | yes | Transactional email |
+| `FROM_EMAIL` | yes | Verified Resend sender |
+| `CLOUDINARY_CLOUD_NAME` | yes | Product image environment |
+| `CLOUDINARY_API_KEY` | yes | Product image management |
+| `CLOUDINARY_API_SECRET` | yes | Product image management |
+| `STRIPE_SECRET_KEY` | yes | Hosted Checkout |
+| `STRIPE_WEBHOOK_SECRET` | yes | Webhook signature verification |
+| `STRIPE_CURRENCY=usd` | yes | Product, shipping, and feed currency |
+| `GOOGLE_CLIENT_ID` | optional | Google sign-in |
+| `GOOGLE_CLIENT_SECRET` | optional | Google sign-in |
+| `GOOGLE_CALLBACK_URL` | optional | Google OAuth callback |
+
+Do not keep `ADMIN_PASSWORD` or `SEED_SECRET` in production after bootstrap.
+
+Use the narrowest MongoDB Atlas network access compatible with the service.
+If a hosting platform's dynamic egress forces a broad temporary rule, pair it
+with a least-privilege database user, a unique rotated password, and monitoring.
+
+### Render verification
 
 ```bash
-# Install Node.js 22
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Clone repo
-git clone https://github.com/yourusername/reflexity-ram.git
-cd reflexity-ram/backend
-npm install
-
-# Set up environment
-cp .env.example .env
-nano .env  # Fill in all values
-
-# Install PM2 for process management
-sudo npm install -g pm2
-pm2 start src/server.js --name reflexity-api
-pm2 startup
-pm2 save
-
-# Set up Nginx reverse proxy
-sudo apt install nginx
-# Configure /etc/nginx/sites-available/reflexity-api
+curl -fsS https://reflexity-ram.onrender.com/api/health
+curl -fsS 'https://reflexity-ram.onrender.com/api/products?page=1&limit=100'
+curl -fsS https://reflexity-ram.onrender.com/feed.xml
+curl -fsS https://reflexity-ram.onrender.com/sitemap.xml
 ```
 
----
+The health response must report `status=ok`, `env=production`, and Stripe
+enabled. Confirm catalog counts without printing customer, credential, or order
+data.
 
-## 4. Seed the Database
+## 3. Stripe
 
-After deploying the backend, run the seed script to create initial products and admin user:
+Create a production webhook endpoint:
+
+```text
+https://reflexity-ram.onrender.com/api/stripe/webhook
+```
+
+Subscribe it to the events handled by the code:
+
+- `checkout.session.completed`
+- `checkout.session.async_payment_succeeded`
+- `checkout.session.async_payment_failed`
+- `checkout.session.expired`
+- `charge.refunded`
+
+Store the endpoint's signing secret as `STRIPE_WEBHOOK_SECRET`. Checkout uses
+Stripe-hosted pages; the frontend does not require a publishable Stripe key.
+
+Changing `STRIPE_CURRENCY` causes product prices to be resynchronized. Confirm
+the website, shipping options, feed, and Stripe Prices use the same currency.
+
+## 4. Resend and Cloudinary
+
+- Verify the sending domain in Resend and use that domain in `FROM_EMAIL`.
+- Use a dedicated Cloudinary product environment with a least-privilege key.
+- After any credential rotation, verify a controlled email and an image
+  upload/delete operation without printing the new credential.
+- Old image delivery URLs may remain readable after a migration; that does not
+  mean their historical API credentials should remain active.
+
+## 5. Cloudflare Pages
+
+Configure project `reflexity-ram2`:
+
+- Production branch: `main`
+- Root directory: `frontend`
+- Build command: `npm ci && npm run build`
+- Output directory: `dist`
+- Environment: `VITE_API_URL=https://reflexity-ram.onrender.com/api`
+
+Cloudflare automatically provides SPA fallback because the build does not ship
+a top-level `404.html`. Do not add an external-domain `200` rewrite to
+`_redirects`; Pages cannot proxy external domains that way.
+
+The file-routed functions are:
+
+```text
+frontend/functions/feed.xml.js
+frontend/functions/sitemap.xml.js
+```
+
+They fetch the backend's live XML and return `X-Reflexity-Source:
+live-catalog-api`. `frontend/public/_routes.json` limits Function invocation to
+those two paths, keeping normal storefront assets static.
+
+Local Pages verification:
 
 ```bash
-cd backend
-# For local development:
-node src/scripts/seed.js
-
-# For Railway (via Railway CLI):
-railway run node src/scripts/seed.js
-
-# For Render: Use the Shell tab in the dashboard
+cd frontend
+npx wrangler pages dev ./dist --port 8788
+curl -i http://127.0.0.1:8788/feed.xml
+curl -i http://127.0.0.1:8788/sitemap.xml
 ```
 
-Default admin credentials (change immediately!):
-- Email: `admin@reflexityram.com`
-- Password: `Admin@123456`
-
-**To customize:** Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` env vars before seeding.
-
----
-
-## 5. Frontend Deployment (Cloudflare Pages)
-
-### Step 1: Push to GitHub
+## 6. Post-deploy verification
 
 ```bash
-cd /path/to/reflexity-ram
-git init  # already done
-git add .
-git commit -m "Initial production build"
-gh repo create reflexity-ram --private
-git remote add origin https://github.com/yourusername/reflexity-ram.git
-git push -u origin main
+curl -fsSI https://reflexityram.com/
+curl -fsSI https://reflexityram.com/feed.xml
+curl -fsSI https://reflexityram.com/sitemap.xml
+curl -fsS https://reflexityram.com/robots.txt
 ```
 
-### Step 2: Connect to Cloudflare Pages
+Required checks:
 
-1. Go to [pages.cloudflare.com](https://pages.cloudflare.com)
-2. Create a project → Connect to Git → Select your repo
-3. Configure build settings:
-   - **Framework preset:** Vite
-   - **Root directory:** `frontend`
-   - **Build command:** `npm install --legacy-peer-deps && npm run build`
-   - **Build output directory:** `dist`
-4. Add environment variables:
-   ```
-   VITE_API_URL=https://your-backend.railway.app/api
-   VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
-   ```
-5. Deploy!
+1. Apex homepage returns HTTP 200 and the current hashed JS bundle.
+2. HTTP redirects to HTTPS.
+3. Static pages include HSTS and the staged CSP report-only policy.
+4. Feed and sitemap include `X-Reflexity-Source: live-catalog-api`.
+5. Feed item count, prices, currency, stock state, and image URLs match the API.
+6. Sitemap contains all indexable public routes plus every active product.
+7. `/admin` APIs return 401 without an authenticated admin token.
+8. A disallowed CORS origin receives no access-control permission.
 
-### Step 3: Custom Domain (Optional)
+Do not place a live order merely as a deployment smoke test. Use Stripe test
+mode and isolated data for end-to-end payment verification.
 
-In Cloudflare Pages → Custom Domains → Add `reflexityram.com`
+## 7. Rollback
 
----
+- Cloudflare Pages: select the last known-good deployment and roll it back.
+- Render: redeploy the last known-good Git commit.
+- Database: do not restore or delete records until exact scope and backups are
+  verified. Product removal is normally soft deactivation.
 
-## 6. Stripe Setup
-
-### Test Mode (Development)
-1. Get test keys from [Stripe Dashboard](https://dashboard.stripe.com/test/apikeys)
-2. Use `pk_test_...` for `VITE_STRIPE_PUBLISHABLE_KEY`
-3. Use `sk_test_...` for `STRIPE_SECRET_KEY`
-
-### Webhook Setup
-1. Go to Stripe Dashboard → Webhooks → Add endpoint
-2. URL: `https://your-backend.railway.app/api/stripe/webhook`
-3. Events to listen for:
-   - `payment_intent.succeeded`
-   - `payment_intent.payment_failed`
-4. Copy the webhook signing secret → `STRIPE_WEBHOOK_SECRET`
-
-### Live Mode (Production)
-1. Complete Stripe account verification
-2. Switch to live keys in your environment variables
-
----
-
-## 7. Resend Email Setup
-
-1. Log in to [resend.com](https://resend.com)
-2. Add and verify your sending domain (e.g., `reflexityram.com`)
-3. Update `FROM_EMAIL` to use your verified domain:
-   ```
-   FROM_EMAIL=Reflexity RAM <noreply@reflexityram.com>
-   ```
-4. The `RESEND_API_KEY` is already configured in the `.env`
-
----
-
-## 8. Post-Deployment Checklist
-
-- [ ] Backend health check: `GET https://your-api.railway.app/api/health`
-- [ ] Database seeded with products and admin user
-- [ ] Admin login works at `/admin`
-- [ ] Product images upload via Cloudinary
-- [ ] Signup email verification works
-- [ ] Password reset email works
-- [ ] Stripe test payment works
-- [ ] Order confirmation email works
-- [ ] Change default admin password immediately
-
----
-
-## 9. Environment Variables Reference
-
-### Backend (`backend/.env`)
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NODE_ENV` | Yes | `production` or `development` |
-| `PORT` | Yes | Server port (default: 5000) |
-| `MONGODB_URI` | Yes | MongoDB Atlas connection string |
-| `JWT_SECRET` | Yes | Min 32 chars, random string |
-| `JWT_EXPIRES_IN` | No | Default: `7d` |
-| `ALLOWED_ORIGINS` | Yes | Comma-separated frontend URLs |
-| `FRONTEND_URL` | Yes | Frontend URL for email links |
-| `RESEND_API_KEY` | Yes | Resend API key |
-| `FROM_EMAIL` | Yes | Sender email address |
-| `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary cloud name |
-| `CLOUDINARY_API_KEY` | Yes | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret |
-| `STRIPE_SECRET_KEY` | Yes | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | Yes | Stripe webhook secret |
-
-### Frontend (`frontend/.env`)
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `VITE_API_URL` | Yes | Backend API URL |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | Yes | Stripe publishable key |
-
----
-
-## 10. Local Development
-
-```bash
-# Clone the repo
-git clone https://github.com/yourusername/reflexity-ram.git
-cd reflexity-ram
-
-# Install all dependencies
-npm run install:all
-
-# Set up environment files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-# Edit both .env files with your values
-
-# Seed the database
-npm run seed
-
-# Start both frontend and backend
-npm run dev
-# Frontend: http://localhost:5173
-# Backend:  http://localhost:5000
-```
-
----
-
-## 11. Security Notes
-
-- **Never commit `.env` files** — they are in `.gitignore`
-- **Change the default admin password** immediately after first login
-- **Use a strong JWT_SECRET** — at least 64 random characters
-- **Enable MongoDB Atlas IP allowlist** for production (restrict to your backend IP if static)
-- **Use Stripe test mode** until you're ready to accept real payments
-- Rate limiting is enabled: 100 req/15min globally, 10 req/15min for auth endpoints
+After rollback, repeat the public health, feed, sitemap, and catalog probes.

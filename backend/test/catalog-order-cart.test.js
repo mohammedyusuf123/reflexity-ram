@@ -12,6 +12,7 @@ const {
   shouldDecrementStockForFulfillment,
   stockDecrementClaimFilter,
 } = require('../src/utils/stock');
+const { STATIC_PAGES } = require('../src/config/sitemap');
 
 const product = (overrides = {}) => ({
   _id: 'product-id',
@@ -135,4 +136,34 @@ test('Stripe recovery never re-decrements stock released by a terminal order', (
     stockDecremented: { $ne: true },
     status: { $nin: ['cancelled', 'refunded'] },
   });
+});
+
+test('sitemap includes every indexable public storefront route', () => {
+  const paths = new Set(STATIC_PAGES.map(({ path }) => path));
+  const expectedPaths = [
+    '/',
+    '/shop',
+    '/categories',
+    '/guides',
+    '/guides/ddr4-vs-ddr5',
+    '/guides/ecc-rdimm-udimm-explained',
+    '/guides/how-to-identify-ram',
+    '/guides/how-much-ram-do-i-need',
+    '/wholesale',
+    '/liquidators',
+    '/support',
+    '/business-info',
+    '/shipping',
+    '/international',
+    '/returns',
+    '/warranty',
+    '/faq',
+    '/privacy',
+    '/terms',
+  ];
+
+  for (const path of expectedPaths) {
+    assert.equal(paths.has(path), true, `${path} must be present in the sitemap`);
+  }
+  assert.equal(paths.size, expectedPaths.length, 'sitemap paths must remain complete and unique');
 });

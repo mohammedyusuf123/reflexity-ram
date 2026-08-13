@@ -1,5 +1,9 @@
 # Reflexity RAM — Update (June 2026)
 
+> **HISTORICAL SNAPSHOT.** These were planning notes, not current production
+> state. Consult `PROJECT_STATE.md` for verified status and `DEPLOY.md` for
+> current instructions.
+
 ## 1. Inline editing for support pages (Shipping / Returns / Warranty / FAQ)
 - No CMS, no admin nav item. Visit the page → if you're an admin, an **Edit** button appears top-right.
 - Click Edit → the content becomes editable in place with a small toolbar (bold, italic, heading, bullet list, normal text) → click **Save** → live immediately, returns to view mode.

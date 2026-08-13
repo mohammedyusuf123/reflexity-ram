@@ -1,5 +1,9 @@
 # Reflexity RAM — Updates Applied (June 2026)
 
+> **HISTORICAL SNAPSHOT.** Retained to explain earlier work. It is not a
+> deployment checklist or statement of current readiness. Current truth lives
+> in `PROJECT_STATE.md`, `README.md`, and `DEPLOY.md`.
+
 ## Summary of Changes
 
 This document outlines all updates applied to the Reflexity RAM codebase to align with the June 2026 requirements specified in `CHANGES.md` and the pre-production audit.

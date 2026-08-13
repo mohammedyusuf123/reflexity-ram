@@ -1,83 +1,101 @@
-# Reflexity RAM — Production E-Commerce Platform
+# Reflexity RAM
 
-A full-stack, production-ready e-commerce platform for RAM/memory products. Built with React + Vite (frontend) and Node.js + Express + MongoDB (backend).
+Production ecommerce storefront for tested server, desktop, and laptop memory.
 
-## Stack
+- Storefront: https://reflexityram.com
+- API: https://reflexity-ram.onrender.com
+- Repository: https://github.com/mohammedyusuf123/reflexity-ram
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, Vite, TailwindCSS, Zustand, React Router |
-| Backend | Node.js, Express, Mongoose |
+## Architecture
+
+| Layer | Current implementation |
+|---|---|
+| Frontend | React 19, Vite 7, React Router, Zustand, Tailwind CSS |
+| API | Node.js, Express 5, Mongoose 9 |
 | Database | MongoDB Atlas |
-| Auth | JWT + bcrypt, email verification |
+| Payments | Stripe hosted Checkout, Stripe Tax, signed webhooks |
 | Email | Resend |
 | Images | Cloudinary |
-| Payments | Stripe (Elements + Payment Intents) |
-| Frontend hosting | Cloudflare Pages |
-| Backend hosting | Railway / Render / Fly / VPS |
+| Hosting | Cloudflare Pages frontend, Render backend |
 
-## Features
+Cloudflare Pages Functions serve `/feed.xml` and `/sitemap.xml` from the live
+catalog API. They must not be replaced by checked-in product snapshots: stock,
+price, and availability need to follow MongoDB automatically.
 
-- **Auth:** Signup, login, logout, email verification, forgot/reset password, admin roles
-- **Products:** Full CRUD via admin, Cloudinary image uploads, inventory tracking
-- **Cart:** Server-side persistent cart (syncs across devices when logged in)
-- **Checkout:** Stripe Payment Elements, real order creation, order confirmation emails
-- **Admin:** Dashboard with stats, product/order/user management, inline editing
-- **Security:** Rate limiting, JWT middleware, input validation, CORS, helmet
+## Local setup
 
-## Quick Start
+Requirements: Node.js 22 and npm.
 
 ```bash
-git clone https://github.com/yourusername/reflexity-ram.git
+git clone https://github.com/mohammedyusuf123/reflexity-ram.git
 cd reflexity-ram
 npm run install:all
-cp backend/.env.example backend/.env   # Fill in values
-cp frontend/.env.example frontend/.env # Fill in values
-npm run seed   # Seed DB with products + admin user
-npm run dev    # Start both frontend (5173) and backend (5000)
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
+
+Fill the local `.env` files with development credentials, then run:
+
+```bash
+npm run dev
+```
+
+The frontend runs on port 5173 and the API on port 5000 by default.
+
+## Verification
+
+```bash
+npm test
+npm run build:frontend
+npm run scan:secrets
+npm audit --prefix frontend
+npm audit --prefix backend
+```
+
+The first three checks are also available as `npm run verify`.
+
+The real Atlas rollback test is deliberately opt-in and requires a dedicated,
+disposable test database:
+
+```bash
+npm --prefix backend run test:atlas
+```
+
+See the safety guards in `backend/test/atlas-stock-transaction.integration.test.js`
+before supplying its environment variables.
+
+## Admin bootstrap
+
+There are no default admin credentials. Set `ADMIN_EMAIL` and a unique
+`ADMIN_PASSWORD` of at least 12 characters in `backend/.env`, then run:
+
+```bash
+npm run seed
+```
+
+Do not enable the HTTP seed route in production unless it is needed for a
+single controlled operation. It is disabled whenever `SEED_SECRET` is unset.
 
 ## Deployment
 
-See [DEPLOY.md](./DEPLOY.md) for full deployment instructions.
+Production deploys from `main`:
 
-## Project Structure
+- Render builds and starts `backend/`.
+- Cloudflare Pages project `reflexity-ram2` builds `frontend/` and discovers
+  the two file-routed Pages Functions.
 
-```
-reflexity-ram/
-├── frontend/          # React + Vite SPA
-│   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── pages/         # Route pages
-│   │   │   └── admin/     # Admin dashboard pages
-│   │   ├── lib/           # API client, stores (Zustand)
-│   │   └── App.jsx        # Router
-│   ├── public/
-│   │   ├── _redirects     # Cloudflare Pages SPA routing
-│   │   └── _headers       # Security headers
-│   └── vite.config.js
-│
-├── backend/           # Express API
-│   ├── src/
-│   │   ├── models/        # Mongoose models (User, Product, Cart, Order)
-│   │   ├── routes/        # API routes
-│   │   ├── middleware/     # Auth, validation, rate limiting
-│   │   ├── utils/         # Email (Resend), Cloudinary
-│   │   ├── config/        # Cloudinary config
-│   │   ├── scripts/       # DB seed script
-│   │   └── server.js      # Entry point
-│   ├── .env.example
-│   ├── railway.toml       # Railway deployment config
-│   └── render.yaml        # Render deployment config
-│
-├── DEPLOY.md          # Full deployment guide
-└── README.md
-```
+See [DEPLOY.md](./DEPLOY.md) for the exact configuration and post-deploy checks.
+Current operational evidence and known limitations live in
+[PROJECT_STATE.md](./PROJECT_STATE.md).
 
-## Admin Access
+## Security
 
-After seeding, log in at `/admin` with:
-- Email: `admin@reflexityram.com`
-- Password: `Admin@123456`
+- Never commit runtime `.env` files or provider credentials.
+- Run `npm run scan:secrets` before every push.
+- Rotate any credential that is printed, committed, or otherwise exposed.
+- Product deletion is a reversible soft deactivation so order and review
+  references remain intact.
+- Admin API routes enforce both authentication and the admin role server-side.
 
-**Change this immediately in production.**
+Historical audit documents are retained for incident context, but they are not
+current deployment instructions.

@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { proxyCatalogXml } from "../functions-shared/proxyCatalogXml.js";
 import { renderProductPage } from "../functions-shared/productMetadata.js";
+import { STOREFRONT_SECURITY_HEADERS } from "../functions-shared/securityHeaders.js";
 import { onRequest as feedHandler } from "../functions/feed.xml.js";
 import { onRequest as productHandler } from "../functions/shop/[slug].js";
 import { onRequest as sitemapHandler } from "../functions/sitemap.xml.js";
@@ -104,6 +105,19 @@ test("Pages route manifest invokes Functions only for live XML and product pages
   });
 });
 
+test("static and edge storefront responses enforce the same CSP", async () => {
+  const policy = STOREFRONT_SECURITY_HEADERS["Content-Security-Policy"];
+  const staticHeaders = await readFile(
+    new URL("../public/_headers", import.meta.url),
+    "utf8",
+  );
+
+  assert.ok(policy);
+  assert.match(policy, /https:\/\/static\.cloudflareinsights\.com/);
+  assert.doesNotMatch(staticHeaders, /Content-Security-Policy-Report-Only/i);
+  assert.match(staticHeaders, new RegExp(`Content-Security-Policy: ${policy.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+});
+
 test("product edge metadata uses the exact live API contract and escapes values", async () => {
   const calls = [];
   const slug = "rfx-test-product";
@@ -129,6 +143,11 @@ test("product edge metadata uses the exact live API contract and escapes values"
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("x-reflexity-seo"), "product-edge");
   assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
+  assert.equal(
+    response.headers.get("content-security-policy"),
+    STOREFRONT_SECURITY_HEADERS["Content-Security-Policy"],
+  );
+  assert.equal(response.headers.get("content-security-policy-report-only"), null);
   assert.equal(response.headers.get("etag"), null);
   assert.match(html, /<title>Tested &quot;64GB&quot;<\/title>/);
   assert.doesNotMatch(html, /&lt;RAM&gt;|<RAM>/);

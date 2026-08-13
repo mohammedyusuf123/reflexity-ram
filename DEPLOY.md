@@ -181,7 +181,7 @@ Required checks:
 
 1. Apex homepage returns HTTP 200 and the current hashed JS bundle.
 2. HTTP redirects to HTTPS.
-3. Static pages include HSTS and the staged CSP report-only policy.
+3. Static and product-edge pages include HSTS and the enforced CSP policy.
 4. Feed and sitemap include `X-Reflexity-Source: live-catalog-api`.
 5. Feed item count, prices, currency, stock state, and image URLs match the API.
 6. Sitemap contains all indexable public routes plus every active product.

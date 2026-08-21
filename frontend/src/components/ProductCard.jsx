@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Cpu } from "lucide-react";
 import { imageUrl } from "@/lib/imageUrl";
+import { formatStorePrice, STORE_CURRENCY_CODE } from "@/lib/currency";
 
 export default function ProductCard({ p, index = 0 }) {
   const primaryImage = imageUrl(p.images?.[0]);
@@ -76,15 +77,15 @@ export default function ProductCard({ p, index = 0 }) {
 
         <div className="mt-auto flex items-end gap-3">
           <div className="text-2xl font-bold tracking-tight">
-            ${p.price.toFixed(2)} <span className="text-[10px] font-medium text-neutral-500">USD</span>
+            {formatStorePrice(p.price)} <span className="text-[10px] font-medium text-neutral-500">{STORE_CURRENCY_CODE}</span>
           </div>
           {p.compareAt && p.compareAt > p.price && (
             <>
               <div className="text-[12px] text-neutral-500 line-through mb-1">
-                ${p.compareAt.toFixed(2)}
+                {formatStorePrice(p.compareAt)}
               </div>
               <div className="ml-auto mb-1 mono text-[10px] text-emerald-300">
-                Save ${(p.compareAt - p.price).toFixed(0)}
+                Save {formatStorePrice(p.compareAt - p.price, 0)}
               </div>
             </>
           )}

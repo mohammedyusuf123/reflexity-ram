@@ -27,6 +27,12 @@ import useAuthStore from "@/lib/authStore";
 import { useSEO } from "@/lib/seo";
 import { productsApi } from "@/lib/api";
 import { reviewsApi } from "@/lib/api";
+import {
+  formatStorePrice,
+  formatStorePriceWithCode,
+  STANDARD_SHIPPING_PRICE,
+  STORE_CURRENCY_CODE,
+} from "@/lib/currency";
 
 
 const TABS = [
@@ -114,7 +120,7 @@ export default function Product() {
       offers: {
         "@type": "Offer",
         url: `https://reflexityram.com/shop/${p.slug}`,
-        priceCurrency: "USD",
+        priceCurrency: STORE_CURRENCY_CODE,
         price: p.price,
         priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
         itemCondition: p.condition === "New" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
@@ -319,15 +325,17 @@ export default function Product() {
               </div>
 
               <div className="flex items-end gap-3 mb-2">
-                <div className="text-4xl font-bold tracking-tight">${p.price.toFixed(2)} <span className="text-sm font-medium text-neutral-500">USD</span></div>
+                <div className="text-4xl font-bold tracking-tight">
+                  {formatStorePrice(p.price)} <span className="text-sm font-medium text-neutral-500">{STORE_CURRENCY_CODE}</span>
+                </div>
                 {p.compareAt && p.compareAt > p.price && (
                   <div className="text-[13px] text-neutral-500 line-through mb-1.5">
-                    ${p.compareAt.toFixed(2)}
+                    {formatStorePrice(p.compareAt)}
                   </div>
                 )}
                 {p.compareAt && p.compareAt > p.price && (
                   <span className="pill pill-accent mb-1.5">
-                    Save ${(p.compareAt - p.price).toFixed(0)}
+                    Save {formatStorePrice(p.compareAt - p.price, 0)}
                   </span>
                 )}
               </div>
@@ -404,7 +412,7 @@ export default function Product() {
                   <div>
                     <div className="text-[13px] font-medium">🇨🇦 🇺🇸 Canada &amp; US shipping</div>
                     <div className="text-[12px] text-neutral-500">
-                      $14 USD flat rate · ESD-safe · tracked
+                      {formatStorePriceWithCode(STANDARD_SHIPPING_PRICE, 0)} flat rate · ESD-safe · tracked
                     </div>
                   </div>
                 </div>
@@ -544,7 +552,9 @@ export default function Product() {
           data-testid="mobile-buy-bar"
         >
           <div className="flex-1">
-            <div className="text-lg font-bold leading-none">${p.price.toFixed(2)}</div>
+            <div className="text-lg font-bold leading-none">
+              {formatStorePrice(p.price)} <span className="text-[10px] font-medium text-neutral-500">{STORE_CURRENCY_CODE}</span>
+            </div>
             <div className="text-[11px] text-neutral-500 mt-1 truncate">{p.sku}</div>
           </div>
           <div className="flex items-center glass rounded-full overflow-hidden">

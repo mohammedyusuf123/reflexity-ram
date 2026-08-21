@@ -7,6 +7,7 @@ import {
 import { toast } from 'sonner';
 import AppLayout from '@/components/AppLayout';
 import { adminApi } from '@/lib/api';
+import { formatStorePrice } from '@/lib/currency';
 import { imageUrl } from '@/lib/imageUrl';
 
 const EMPTY_PRODUCT = {
@@ -288,7 +289,7 @@ function ProductModal({ product, onClose, onSave }) {
             <div>
               <div className="text-[11px] uppercase tracking-widest text-neutral-500 mb-2">Pricing &amp; inventory</div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Price ($)" required>
+                <Field label="Price (CAD)" required>
                   <input type="number" step="0.01" className="input" value={form.price} onChange={e => setField('price', e.target.value)} required placeholder="129.99" />
                 </Field>
                 <Field label="Stock quantity" required>
@@ -442,7 +443,7 @@ export default function AdminProducts() {
                   <th className="text-left p-4 font-normal">Product</th>
                   <th className="text-left p-4 font-normal">SKU</th>
                   <th className="text-left p-4 font-normal">Gen</th>
-                  <th className="text-right p-4 font-normal">Price</th>
+                  <th className="text-right p-4 font-normal">Price (CAD)</th>
                   <th className="text-right p-4 font-normal">Stock</th>
                   <th className="text-center p-4 font-normal">Status</th>
                   <th className="text-right p-4 font-normal">Actions</th>
@@ -484,7 +485,7 @@ export default function AdminProducts() {
                       <td className="p-4">
                         <span className="pill pill-blue text-[10px] py-0.5">{p.generation}</span>
                       </td>
-                      <td className="p-4 text-right mono">${p.price.toFixed(2)}</td>
+                      <td className="p-4 text-right mono">{formatStorePrice(p.price)}</td>
                       <td className="p-4 text-right">
                         <span className={`font-medium ${p.stockQuantity === 0 ? 'text-red-400' : p.stock === 'low' ? 'text-amber-400' : 'text-emerald-400'}`}>
                           {p.stockQuantity}

@@ -25,7 +25,7 @@ export default function Terms() {
           heading: "Orders & payment",
           body: [
             "We reserve the right to refuse or cancel orders for any reason, including suspected fraud or stocking errors.",
-            "Prices are in USD unless otherwise noted.",
+            "Prices are in Canadian dollars (CAD) unless otherwise noted.",
           ],
         },
         {

@@ -1,6 +1,8 @@
 const { Resend } = require('resend');
+const { CURRENCY } = require('../config/shipping');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const DISPLAY_CURRENCY = CURRENCY.toUpperCase();
 
 // IMPORTANT: onboarding@resend.dev is Resend's sandbox sender.
 // It can ONLY send to the email address that owns the Resend account.
@@ -93,7 +95,7 @@ const sendOrderConfirmationEmail = async ({ email, firstName, order }) => {
         <div style="font-size:11px;color:#5a5a64;font-family:monospace;">${item.sku}</div>
       </td>
       <td style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center;color:#a0a0aa;font-size:13px;">${item.qty}</td>
-      <td style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-family:monospace;font-size:13px;">$${(item.price * item.qty).toFixed(2)}</td>
+      <td style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-family:monospace;font-size:13px;">$${(item.price * item.qty).toFixed(2)} ${DISPLAY_CURRENCY}</td>
     </tr>
   `).join('');
 
@@ -130,15 +132,15 @@ const sendOrderConfirmationEmail = async ({ email, firstName, order }) => {
             <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;">
               <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                 <span style="color:#a0a0aa;font-size:13px;">Subtotal</span>
-                <span style="font-family:monospace;font-size:13px;">$${order.subtotal.toFixed(2)}</span>
+                <span style="font-family:monospace;font-size:13px;">$${order.subtotal.toFixed(2)} ${DISPLAY_CURRENCY}</span>
               </div>
               <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                 <span style="color:#a0a0aa;font-size:13px;">Shipping</span>
-                <span style="font-family:monospace;font-size:13px;">${order.shippingCost === 0 ? 'Free' : '$' + order.shippingCost.toFixed(2)}</span>
+                <span style="font-family:monospace;font-size:13px;">${order.shippingCost === 0 ? 'Free' : '$' + order.shippingCost.toFixed(2) + ' ' + DISPLAY_CURRENCY}</span>
               </div>
               <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
                 <span style="font-weight:700;font-size:15px;">Total</span>
-                <span style="font-family:monospace;font-weight:700;font-size:15px;">$${order.total.toFixed(2)}</span>
+                <span style="font-family:monospace;font-weight:700;font-size:15px;">$${order.total.toFixed(2)} ${DISPLAY_CURRENCY}</span>
               </div>
             </div>
             <div style="margin-top:32px;">

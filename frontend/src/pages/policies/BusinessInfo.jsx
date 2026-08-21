@@ -26,7 +26,7 @@ export default function BusinessInfo() {
         {
           heading: "Prices and payment",
           body: [
-            "Store prices are displayed and charged in United States dollars (USD). Shipping charges and any applicable taxes are shown before payment is confirmed.",
+            "Store prices are displayed and charged in Canadian dollars (CAD). Shipping charges and any applicable taxes are shown before payment is confirmed.",
             "Online payments are processed securely by Stripe. Reflexity RAM does not store full payment-card numbers.",
           ],
         },

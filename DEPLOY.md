@@ -71,7 +71,7 @@ Set these environment variables in Render, never in Git:
 | `CLOUDINARY_API_SECRET` | yes | Product image management |
 | `STRIPE_SECRET_KEY` | yes | Hosted Checkout |
 | `STRIPE_WEBHOOK_SECRET` | yes | Webhook signature verification |
-| `STRIPE_CURRENCY=usd` | yes | Product, shipping, and feed currency |
+| `STRIPE_CURRENCY=cad` | yes | Product, shipping, and feed currency |
 | `GOOGLE_CLIENT_ID` | optional | Google sign-in |
 | `GOOGLE_CLIENT_SECRET` | optional | Google sign-in |
 | `GOOGLE_CALLBACK_URL` | optional | Google OAuth callback |

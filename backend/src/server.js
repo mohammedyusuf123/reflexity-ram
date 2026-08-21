@@ -18,6 +18,7 @@ const sitemapRoutes = require('./routes/sitemap');
 const feedRoutes = require('./routes/feed');
 const reviewRoutes = require('./routes/reviews');
 const { fixMerchantProductData } = require('./migrations/fixMerchantProductData');
+const { syncActiveProductPrices } = require('./migrations/syncStoreCurrency');
 
 // Stripe routes are only loaded when a real key is configured.
 // This prevents a crash if STRIPE_SECRET_KEY is missing or empty.
@@ -172,6 +173,20 @@ mongoose
     } catch (err) {
       // Do not take the store offline for a non-critical data normalization.
       console.error('Merchant product normalization failed:', err.message);
+    }
+    if (STRIPE_ENABLED) {
+      try {
+        const currencySync = await syncActiveProductPrices();
+        console.log(
+          `Stripe currency sync: ${currencySync.synced}/${currencySync.matched} active listing(s) in ${currencySync.currency.toUpperCase()}`,
+        );
+        if (currencySync.failed.length > 0) {
+          console.warn(`Stripe currency sync left ${currencySync.failed.length} listing(s) unsynced`);
+        }
+      } catch (err) {
+        // Checkout still retries each item lazily through ensureStripePrice.
+        console.error('Stripe currency sync failed:', err.message);
+      }
     }
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

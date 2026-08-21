@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import EmptyState from '@/components/EmptyState';
 import useCartStore from '@/lib/cartStore';
 import { imageUrl } from '@/lib/imageUrl';
+import { formatStorePrice, STORE_CURRENCY_NAME } from '@/lib/currency';
 
 export default function Cart() {
   const { items, subtotal, itemCount, isLoading, fetchCart, updateItem, removeItem } = useCartStore();
@@ -53,7 +54,7 @@ export default function Cart() {
                       {item.name}
                     </Link>
                     <div className="mono text-[11px] text-neutral-500 mt-0.5">{item.sku}</div>
-                    <div className="text-[15px] font-bold mt-2">${item.price.toFixed(2)}</div>
+                    <div className="text-[15px] font-bold mt-2">{formatStorePrice(item.price)}</div>
                   </div>
                   <div className="flex flex-col items-end gap-3">
                     <button
@@ -80,7 +81,7 @@ export default function Cart() {
                       </button>
                     </div>
                     <div className="mono text-[13px] text-neutral-300">
-                      ${(item.price * item.qty).toFixed(2)}
+                      {formatStorePrice(item.price * item.qty)}
                     </div>
                   </div>
                 </div>
@@ -90,11 +91,11 @@ export default function Cart() {
             {/* Summary */}
             <aside className="glass rounded-2xl p-6 lg:sticky lg:top-24 h-fit" data-testid="cart-summary">
               <h3 className="font-semibold tracking-tight mb-5">Order summary</h3>
-              <p className="text-[11px] text-neutral-500 -mt-3 mb-4">All prices are in USD.</p>
+              <p className="text-[11px] text-neutral-500 -mt-3 mb-4">All prices are in {STORE_CURRENCY_NAME}.</p>
               <div className="space-y-3 text-[13px] mb-5">
                 <div className="flex justify-between text-neutral-300">
                   <span>Subtotal ({itemCount} item{itemCount !== 1 ? 's' : ''})</span>
-                  <span className="mono">${subtotal.toFixed(2)}</span>
+                  <span className="mono">{formatStorePrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-neutral-400">
                   <span>Shipping</span>
@@ -108,7 +109,7 @@ export default function Cart() {
               <div className="border-t border-white/5 pt-4 mb-5">
                 <div className="flex justify-between items-baseline">
                   <span className="text-[13px] text-neutral-400">Estimated total</span>
-                  <span className="text-2xl font-bold">${subtotal.toFixed(2)}</span>
+                  <span className="text-2xl font-bold">{formatStorePrice(subtotal)}</span>
                 </div>
               </div>
               <Link

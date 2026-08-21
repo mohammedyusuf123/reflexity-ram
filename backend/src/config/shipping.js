@@ -9,8 +9,9 @@ const SHIPPING_OPTIONS = {
 
 const getShippingOption = (id) => SHIPPING_OPTIONS[id] || null;
 
-// Store currency for Stripe (lowercase ISO). Change via env when switching to CAD.
-const CURRENCY = (process.env.STRIPE_CURRENCY || 'usd').toLowerCase();
+// Store currency for Stripe (lowercase ISO). CAD is the storefront default;
+// deployments can still override it explicitly when required.
+const CURRENCY = (process.env.STRIPE_CURRENCY || 'cad').toLowerCase();
 
 // Countries we ship to — enforced by Stripe's hosted checkout, which also
 // renders the correct address form per country (Province/Postal code for CA,

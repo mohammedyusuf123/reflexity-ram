@@ -8,6 +8,7 @@ import useCartStore from '@/lib/cartStore';
 import { stripeApi } from '@/lib/api';
 import { useSEO } from '@/lib/seo';
 import { imageUrl } from '@/lib/imageUrl';
+import { formatStorePrice, STORE_CURRENCY_NAME } from '@/lib/currency';
 
 // Checkout is handled by Stripe's hosted Checkout page:
 // - Address collection restricted to Canada + United States, with the
@@ -65,7 +66,7 @@ export default function Checkout() {
                     <div className="font-medium text-[14px] line-clamp-1">{item.name}</div>
                     <div className="text-[12px] text-neutral-500">Qty {item.qty}</div>
                   </div>
-                  <div className="mono text-[14px]">${(item.price * item.qty).toFixed(2)}</div>
+                  <div className="mono text-[14px]">{formatStorePrice(item.price * item.qty)}</div>
                 </div>
               ))}
               <Link to="/cart" className="inline-block text-[13px] text-neutral-400 hover:text-white mt-1">
@@ -76,11 +77,11 @@ export default function Checkout() {
             {/* Summary + hand-off */}
             <div className="lg:col-span-2">
               <div className="glass rounded-2xl p-6 sticky top-24">
-                <p className="text-[11px] text-neutral-500 mb-4">All prices and checkout charges are in USD.</p>
+                <p className="text-[11px] text-neutral-500 mb-4">All prices and checkout charges are in {STORE_CURRENCY_NAME}.</p>
                 <div className="space-y-2 text-[13px] mb-4">
                   <div className="flex justify-between">
                     <span className="text-neutral-400">Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})</span>
-                    <span className="mono">${subtotal.toFixed(2)}</span>
+                    <span className="mono">{formatStorePrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-neutral-400">
                     <span>Shipping</span>

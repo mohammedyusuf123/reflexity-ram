@@ -7,7 +7,7 @@ const DEFAULT_HTML = `<p>How we pack, process, and dispatch orders.</p>
 <p>We ship standard orders to customers in Canada and the United States, with a $14 CAD flat shipping rate shown at checkout.</p>
 <p>We also ship internationally as custom orders. If you're located outside Canada or the United States, email us at reflexityram@gmail.com with the product(s) you'd like and your country, and we'll arrange a shipping quote and the details directly. See our International Orders page for how this works.</p>
 <h2>Processing & packaging</h2>
-<p>Orders are typically processed and shipped within 1–3 business days of purchase.</p>
+<p>Orders are typically processed and shipped within 1–3 business days of purchase. After dispatch, delivery typically takes 3–6 business days in North America, depending on destination and carrier.</p>
 <p>Memory modules are packaged appropriately to help protect them during transit. Packaging may include anti-static bags, original manufacturer packaging, original manufacturer boxes, or other suitable protective materials at our discretion.</p>
 <p>Processing times may occasionally be longer during holidays, severe weather events, carrier disruptions, or periods of unusually high order volume.</p>
 <h2>Tracking information</h2>

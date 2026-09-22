@@ -500,7 +500,7 @@ export default function Product() {
               )}
               {tab === "shipping" && (
                 <div data-testid="product-shipping-content" className="space-y-3 text-[14px] text-neutral-300 leading-relaxed">
-                  <p>Orders typically ship within 1–3 business days of purchase.</p>
+                  <p>Orders typically ship within 1–3 business days of purchase. After dispatch, delivery typically takes 3–6 business days in North America.</p>
                   <p>Memory modules are packaged appropriately to help protect them during transit. Packaging may include anti-static bags, original manufacturer packaging and boxes, or other suitable protective materials at our discretion.</p>
                   <p>
                     <Link to="/shipping" className="text-white underline underline-offset-4">
